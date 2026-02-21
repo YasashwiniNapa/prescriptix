@@ -41,6 +41,19 @@ export interface ScreeningSession {
   overallRisk: 'low' | 'moderate' | 'high';
 }
 
+export interface PatientProfile {
+  name: string;
+  dob: string;
+  gender: string;
+  email: string;
+  phone: string;
+  provider: string;
+  providerSpecialty: string;
+  allergies: string;
+  medications: string;
+  conditions: string[];
+}
+
 export type AppStep = 
   | 'welcome'
   | 'camera'
@@ -49,5 +62,7 @@ export type AppStep =
   | 'voice-input'
   | 'intake'
   | 'processing'
+  | 'profile-setup'
+  | 'patient-dashboard'
   | 'dashboard'
   | 'history';
