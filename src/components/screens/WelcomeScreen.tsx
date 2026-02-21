@@ -24,11 +24,11 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
           transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
           className="mx-auto mb-8"
         >
-          <img src={logo} alt="PreCheck logo" className="h-24 w-24 rounded-2xl shadow-elevated" />
+          <img src={logo} alt="Prescriptix logo" className="h-24 w-24 rounded-2xl shadow-elevated" />
         </motion.div>
 
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground font-display">
-          PreCheck
+          Prescriptix
         </h1>
         <p className="mb-2 text-lg font-medium text-foreground/80 font-display">
           Facial Asymmetry Screening
