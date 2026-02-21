@@ -86,7 +86,7 @@ const Index = () => {
 
   const handleResultsContinue = (updatedSymptoms: SymptomItem[]) => {
     setSymptoms(updatedSymptoms);
-    setStep('nearby-hospitals');
+    setStep('voice-input');
   };
 
   const handleVoiceComplete = (transcript: string) => {
@@ -118,29 +118,27 @@ const Index = () => {
           await saveSession(profileId, symptoms, ins, session.overallRisk);
           const updatedSessions = await loadSessions();
           setSessions(updatedSessions);
-          setStep('patient-dashboard');
         } else {
-          // Need profile first, save session after profile creation
           setSessions(prev => [session, ...prev]);
-          setStep('profile-setup');
         }
       } catch {
         setSessions(prev => [session, ...prev]);
-        if (!profile) {
-          setStep('profile-setup');
-        } else {
-          setStep('patient-dashboard');
-        }
       }
     } else {
       setSessions(prev => [session, ...prev]);
-      if (!profile) {
-        setStep('profile-setup');
-      } else {
-        setStep('patient-dashboard');
-      }
     }
+
+    // Always go to hospitals screen after processing
+    setStep('nearby-hospitals');
   }, [symptoms, profile, user]);
+
+  const handleHospitalsContinue = () => {
+    if (!profile) {
+      setStep('profile-setup');
+    } else {
+      setStep('patient-dashboard');
+    }
+  };
 
   const handleProfileComplete = async (newProfile: PatientProfile) => {
     setProfile(newProfile);
@@ -193,12 +191,6 @@ const Index = () => {
           <VisualScreeningScreen stream={stream} onComplete={handleScreeningComplete} />
         )}
         {step === 'results' && <ResultsScreen symptoms={symptoms} onContinue={handleResultsContinue} />}
-        {step === 'nearby-hospitals' && (
-          <NearbyHospitalsScreen
-            onContinue={() => setStep('voice-input')}
-            onSkip={() => setStep('voice-input')}
-          />
-        )}
         {step === 'voice-input' && (
           <VoiceInputScreen onComplete={handleVoiceComplete} onSkip={handleVoiceSkip} />
         )}
@@ -211,6 +203,13 @@ const Index = () => {
           />
         )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
+        {step === 'nearby-hospitals' && (
+          <NearbyHospitalsScreen
+            onContinue={handleHospitalsContinue}
+            onSkip={handleHospitalsContinue}
+            overallRisk={overallRisk}
+          />
+        )}
         {step === 'profile-setup' && (
         <ProfileSetupScreen
             prefillName={intakeData?.patientName || user?.user_metadata?.full_name}
