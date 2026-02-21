@@ -70,6 +70,7 @@ export type AppStep =
   | 'voice-input'
   | 'intake'
   | 'processing'
+  | 'advisory'
   | 'profile-setup'
   | 'add-provider'
   | 'patient-dashboard'

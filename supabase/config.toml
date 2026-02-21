@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.nearby-hospitals]
 verify_jwt = false
+
+[functions.analyze-insights]
+verify_jwt = false
