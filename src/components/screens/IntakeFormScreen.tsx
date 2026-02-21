@@ -9,20 +9,39 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SymptomItem, IntakeFormData } from '@/lib/screening-types';
+import { SymptomItem, IntakeFormData, ScreeningResult } from '@/lib/screening-types';
 
 interface IntakeFormScreenProps {
   symptoms: SymptomItem[];
+  screeningResult?: ScreeningResult | null;
   onSubmit: (data: IntakeFormData) => void;
 }
 
-const IntakeFormScreen = ({ symptoms, onSubmit }: IntakeFormScreenProps) => {
+const IntakeFormScreen = ({ symptoms, screeningResult, onSubmit }: IntakeFormScreenProps) => {
   const checkedSymptoms = symptoms.filter(s => s.checked).map(s => s.label).join(', ');
+
+  // Auto-derive severity from screening result
+  const autoSeverity = screeningResult
+    ? Math.min(10, Math.round((screeningResult.fatigueScore + screeningResult.feverRisk + screeningResult.asymmetryScore) * 10))
+    : 5;
+
+  // Auto-derive duration hint from fatigue score
+  const autoDuration = screeningResult && screeningResult.fatigueScore > 0.6 ? '2-3 days' : '';
+
+  // Auto-derive notes from AI findings
+  const autoNotes = screeningResult
+    ? [
+        screeningResult.droopyEyes ? 'AI detected droopy eyelids during screening.' : '',
+        screeningResult.feverRisk > 0.4 ? `Thermal scan indicated elevated temperature risk (${Math.round(screeningResult.feverRisk * 100)}%).` : '',
+        screeningResult.fatigueScore > 0.5 ? `Fatigue markers detected (score: ${screeningResult.fatigueScore}).` : '',
+      ].filter(Boolean).join(' ')
+    : '';
+
   const [form, setForm] = useState<IntakeFormData>({
     symptoms: checkedSymptoms,
-    duration: '',
-    severity: 5,
-    notes: '',
+    duration: autoDuration,
+    severity: autoSeverity,
+    notes: autoNotes,
   });
 
   const [patientInfo, setPatientInfo] = useState({
