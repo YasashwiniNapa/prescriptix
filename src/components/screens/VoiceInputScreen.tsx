@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Square, Play, SkipForward } from 'lucide-react';
+import { Mic, MicOff, Square, Play, SkipForward, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface VoiceInputScreenProps {
   onComplete: (transcript: string) => void;
@@ -12,6 +14,7 @@ const VoiceInputScreen = ({ onComplete, onSkip }: VoiceInputScreenProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [transcript, setTranscript] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [duration, setDuration] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -40,15 +43,34 @@ const VoiceInputScreen = ({ onComplete, onSkip }: VoiceInputScreenProps) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         setAudioURL(URL.createObjectURL(blob));
         stream.getTracks().forEach(t => t.stop());
         audioContext.close();
-        // Simulate transcript from voice
-        setTranscript(
-          "I've been experiencing headaches for the past two days, along with some fatigue and occasional dizziness. My throat feels a bit sore and I've had trouble sleeping."
-        );
+
+        // Send to Azure Whisper for real transcription
+        setIsTranscribing(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', blob, 'recording.webm');
+
+          const { data, error } = await supabase.functions.invoke('transcribe', {
+            body: formData,
+          });
+
+          if (error) throw error;
+          if (data?.text) {
+            setTranscript(data.text);
+          } else {
+            toast.error('No speech detected. Please try again.');
+          }
+        } catch (err) {
+          console.error('Transcription error:', err);
+          toast.error('Transcription failed. Please try again.');
+        } finally {
+          setIsTranscribing(false);
+        }
       };
 
       mediaRecorder.start();
@@ -178,11 +200,19 @@ const VoiceInputScreen = ({ onComplete, onSkip }: VoiceInputScreenProps) => {
                 <audio src={audioURL} controls className="w-full h-8" />
               </div>
 
+              {/* Transcribing indicator */}
+              {isTranscribing && (
+                <div className="rounded-xl bg-card p-4 shadow-card flex items-center gap-3">
+                  <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                  <span className="text-sm text-muted-foreground">Transcribing with Whisper AI…</span>
+                </div>
+              )}
+
               {/* Transcript */}
-              {transcript && (
+              {transcript && !isTranscribing && (
                 <div className="rounded-xl bg-card p-4 shadow-card text-left">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Transcript (simulated)
+                    Transcript
                   </p>
                   <p className="text-sm text-foreground leading-relaxed">{transcript}</p>
                 </div>
