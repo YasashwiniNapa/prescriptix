@@ -187,14 +187,20 @@ const PatientDashboardScreen = ({
               </CardHeader>
               <CardContent>
                 {profile.provider ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <Stethoscope className="h-5 w-5 text-primary" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <Stethoscope className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{profile.provider}</p>
+                        <p className="text-xs text-muted-foreground">{profile.providerSpecialty || 'General Practice'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{profile.provider}</p>
-                      <p className="text-xs text-muted-foreground">{profile.providerSpecialty || 'General Practice'}</p>
-                    </div>
+                    <Button variant="ghost" size="sm" onClick={onAddProvider} className="gap-1.5 text-primary w-full">
+                      <ChevronRight className="h-3 w-3" />
+                      Change Provider
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center py-4">
