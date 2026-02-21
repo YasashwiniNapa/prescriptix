@@ -4,7 +4,6 @@ import { ScreeningResult } from '@/lib/screening-types';
 import { Eye, Move, Activity, Shield, Droplets } from 'lucide-react';
 import { createLandmarkExtractor, LandmarkFrame } from '@/lib/landmark-service';
 import { extractSymmetryFeatures, SymmetryFeatures, aggregateFeatures } from '@/lib/feature-engineering';
-import { scoreAggregated, RiskResult } from '@/lib/risk-scoring';
 import { extractScleraPixels, analyzeScleraYellowness, ScleraYellownessResult } from '@/lib/sclera-analysis';
 import { captureAmbientSubtractionFrames, subtractFrames } from '@/lib/ambient-subtraction';
 
@@ -35,6 +34,27 @@ const movementPrompts = [
   { instruction: 'Look straight ahead', icon: '○' },
 ];
 
+type LandmarkPoint2d = { id: string; x: number; y: number };
+
+const LANDMARK_RING = Array.from({ length: 17 }, (_, i) => i * 28);
+const LANDMARK_SUBSET = [
+  ...LANDMARK_RING,
+  33, 133, 159, 145, 263, 362, 386, 374,
+  61, 291, 13, 14,
+  1, 6, 2, 152,
+  105, 334, 70, 300,
+];
+
+const buildLandmarkPoints = (frame: LandmarkFrame, width: number, height: number): LandmarkPoint2d[] =>
+  LANDMARK_SUBSET
+    .filter(idx => idx < frame.landmarks.length)
+    .map(idx => ({
+      id: `lm-${idx}`,
+      x: frame.landmarks[idx].x * width,
+      y: frame.landmarks[idx].y * height,
+    }));
+
+// runs the real-time landmark scan and builds a screening result
 const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const flashOverlayRef = useRef<HTMLDivElement>(null);
@@ -42,7 +62,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('Initializing…');
   const [currentPhase, setCurrentPhase] = useState<Phase>('detect');
-  const [landmarkPoints, setLandmarkPoints] = useState<{ x: number; y: number }[]>([]);
+  const [landmarkPoints, setLandmarkPoints] = useState<LandmarkPoint2d[]>([]);
   const [movementIndex, setMovementIndex] = useState(0);
 
   // Real-time metrics
@@ -82,20 +102,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
           if (videoEl && frame.landmarks.length >= 468) {
             const w = videoEl.clientWidth;
             const h = videoEl.clientHeight;
-            const subset = [
-              ...Array.from({ length: 17 }, (_, i) => i * 28),
-              33, 133, 159, 145, 263, 362, 386, 374,
-              61, 291, 13, 14,
-              1, 6, 2, 152,
-              105, 334, 70, 300,
-            ];
-            const pts = subset
-              .filter(idx => idx < frame.landmarks.length)
-              .map(idx => ({
-                x: frame.landmarks[idx].x * w,
-                y: frame.landmarks[idx].y * h,
-              }));
-            setLandmarkPoints(pts);
+            setLandmarkPoints(buildLandmarkPoints(frame, w, h));
 
             const features = extractSymmetryFeatures(frame.landmarks);
             setCurrentFeatures(features);
@@ -118,12 +125,13 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
         }, 100);
       } catch (err) {
         console.error('MediaPipe init failed, using fallback:', err);
-        const points: { x: number; y: number }[] = [];
+        const points: LandmarkPoint2d[] = [];
         for (let i = 0; i < 68; i++) {
           const angle = (i / 68) * Math.PI * 2;
           const rx = 120 + Math.random() * 20;
           const ry = 150 + Math.random() * 20;
           points.push({
+            id: `fb-${i}`,
             x: 192 + Math.cos(angle) * rx * (0.6 + Math.random() * 0.4),
             y: 210 + Math.sin(angle) * ry * (0.5 + Math.random() * 0.5),
           });
@@ -167,7 +175,10 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
           // Put subtracted image onto canvas for sclera extraction
           canvas.width = pureTissue.width;
           canvas.height = pureTissue.height;
-          const ctx = canvas.getContext('2d')!;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            throw new Error('2d context unavailable');
+          }
           ctx.putImageData(pureTissue, 0, 0);
 
           const { leftPixels, rightPixels } = extractScleraPixels(video, frame.landmarks, canvas);
@@ -203,7 +214,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
         // Fallback mock
         const fallback: ScleraYellownessResult = {
           labYellowness: 9,
-          blueChromaticity: 0.30,
+            blueChromaticity: 0.3,
           meanYellowness: 9,
           leftEyeYellowness: 9,
           rightEyeYellowness: 9,
@@ -270,21 +281,21 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             rightEyeYellowness: sclera?.rightEyeYellowness,
           };
         } else {
-          const earL = parseFloat((0.2 + Math.random() * 0.15).toFixed(3));
-          const earR = parseFloat((earL + (Math.random() * 0.06 - 0.03)).toFixed(3));
+          const earL = Number.parseFloat((0.2 + Math.random() * 0.15).toFixed(3));
+          const earR = Number.parseFloat((earL + (Math.random() * 0.06 - 0.03)).toFixed(3));
           screeningResult = {
             droopyEyes: earL < 0.25 || earR < 0.25,
-            fatigueScore: parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
+            fatigueScore: Number.parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
             feverRisk: 0,
-            asymmetryScore: parseFloat(Math.abs(earL - earR).toFixed(3)),
+            asymmetryScore: Number.parseFloat(Math.abs(earL - earR).toFixed(3)),
             blinkRate: blinkCountRef.current || Math.floor(10 + Math.random() * 15),
             earLeft: earL,
             earRight: earR,
-            eyelidOpeningLeft: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
-            eyelidOpeningRight: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+            eyelidOpeningLeft: Number.parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+            eyelidOpeningRight: Number.parseFloat((2.5 + Math.random() * 3).toFixed(1)),
             swellingDetected: false,
             scleraYellowness: sclera?.labYellowness ?? 9,
-            blueChromaticity: sclera?.blueChromaticity ?? 0.30,
+            blueChromaticity: sclera?.blueChromaticity ?? 0.3,
             yellownessDetected: sclera?.yellownessDetected ?? false,
             leftEyeYellowness: sclera?.leftEyeYellowness,
             rightEyeYellowness: sclera?.rightEyeYellowness,
@@ -303,9 +314,34 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
     detect: 'detect', landmarks: 'landmarks', ear: 'EAR', blink: 'blink',
     movement: 'movement', symmetry: 'symmetry', sclera: 'sclera', final: 'final',
   };
+  const phaseIndex = (phase: Phase) => allPhaseKeys.indexOf(phase);
+  const currentPhaseIndex = phaseIndex(currentPhase);
+  const getPhaseClass = (phase: Phase) => {
+    if (currentPhase === phase) {
+      return phase === 'sclera'
+        ? 'bg-yellow-500 text-black scale-105'
+        : 'bg-primary text-primary-foreground scale-105';
+    }
+    if (phaseIndex(phase) <= currentPhaseIndex) {
+      return phase === 'sclera'
+        ? 'bg-yellow-500/20 text-yellow-400'
+        : 'bg-primary/20 text-primary';
+    }
+    return 'bg-muted text-muted-foreground';
+  };
 
   const earLeft = currentFeatures?.earLeft ?? 0;
   const earRight = currentFeatures?.earRight ?? 0;
+  const symmetryMetrics = currentFeatures
+    ? [
+        { label: 'Lip Corner', value: currentFeatures.lipCornerAsymmetry },
+        { label: 'Smile Angle', value: currentFeatures.smileAngleAsymmetry },
+        { label: 'Eye Ratio', value: Math.abs(1 - currentFeatures.eyeApertureRatio) },
+        { label: 'Brow Delta', value: Math.abs(currentFeatures.browHeightDelta) },
+        { label: 'Jaw Deviation', value: currentFeatures.jawlineDeviation },
+        { label: 'Midface', value: currentFeatures.midfaceSymmetryScore },
+      ]
+    : [];
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-screening">
@@ -384,14 +420,14 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
           <AnimatePresence>
             {(currentPhase === 'landmarks' || currentPhase === 'symmetry') && landmarkPoints.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 pointer-events-none">
-                {landmarkPoints.map((pt, i) => (
+                {landmarkPoints.map((pt, index) => (
                   <motion.div
-                    key={i}
+                    key={pt.id}
                     className="absolute w-1 h-1 rounded-full bg-primary"
                     style={{ left: pt.x, top: pt.y }}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: [0, 1, 0.6], scale: [0, 1.5, 1] }}
-                    transition={{ delay: i * 0.01, duration: 0.3 }}
+                    transition={{ delay: index * 0.01, duration: 0.3 }}
                   />
                 ))}
               </motion.div>
@@ -524,15 +560,8 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Symmetry Analysis</p>
               <div className="space-y-1.5 text-xs">
-                {[
-                  { label: 'Lip Corner', value: currentFeatures.lipCornerAsymmetry },
-                  { label: 'Smile Angle', value: currentFeatures.smileAngleAsymmetry },
-                  { label: 'Eye Ratio', value: Math.abs(1 - currentFeatures.eyeApertureRatio) },
-                  { label: 'Brow Delta', value: Math.abs(currentFeatures.browHeightDelta) },
-                  { label: 'Jaw Deviation', value: currentFeatures.jawlineDeviation },
-                  { label: 'Midface', value: currentFeatures.midfaceSymmetryScore },
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center">
+                {symmetryMetrics.map((item) => (
+                  <div key={item.label} className="flex justify-between items-center">
                     <span className="text-muted-foreground">{item.label}</span>
                     <span className="font-mono text-foreground">{item.value.toFixed(4)}</span>
                   </div>
@@ -615,17 +644,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
           {allPhaseKeys.map(p => (
             <div
               key={p}
-              className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-all duration-300 ${
-                currentPhase === p
-                  ? p === 'sclera'
-                    ? 'bg-yellow-500 text-black scale-105'
-                    : 'bg-primary text-primary-foreground scale-105'
-                  : allPhaseKeys.indexOf(p) <= allPhaseKeys.indexOf(currentPhase)
-                  ? p === 'sclera'
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-primary/20 text-primary'
-                  : 'bg-muted text-muted-foreground'
-              }`}
+              className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-all duration-300 ${getPhaseClass(p)}`}
             >
               {phaseLabels[p]}
             </div>

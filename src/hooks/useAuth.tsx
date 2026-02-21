@@ -7,6 +7,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // keep auth session in sync with supabase
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -23,6 +24,7 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // expose a stable sign-out handler to consumers
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);

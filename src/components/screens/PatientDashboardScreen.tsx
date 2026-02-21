@@ -28,6 +28,7 @@ const riskConfig = {
   high: { color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/30', icon: AlertTriangle, label: 'High Risk' },
 };
 
+// patient home dashboard with profile, insights, and recent sessions
 const PatientDashboardScreen = ({
   profile,
   sessions,
@@ -41,6 +42,7 @@ const PatientDashboardScreen = ({
 }: PatientDashboardScreenProps) => {
   const risk = riskConfig[overallRisk];
   const RiskIcon = risk.icon;
+  const hasProvider = Boolean(profile.provider);
   const initials = profile.name
     .split(' ')
     .map(n => n[0])
@@ -50,6 +52,15 @@ const PatientDashboardScreen = ({
 
   const recentSessions = sessions.slice(0, 3);
   const latestInsights = insights.slice(0, 3);
+  const sessionCountLabel = sessions.length === 1 ? 'screening' : 'screenings';
+  const welcomeMessage = sessions.length > 0
+    ? `You have ${sessions.length} ${sessionCountLabel} on record.`
+    : 'Your profile is all set. Start your first screening!';
+  const getInsightBorder = (level: 'low' | 'moderate' | 'high') => {
+    if (level === 'high') return 'border-l-destructive';
+    if (level === 'moderate') return 'border-l-warning';
+    return 'border-l-success';
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,11 +112,7 @@ const PatientDashboardScreen = ({
             <h1 className="text-2xl font-bold font-display text-foreground">
               Welcome back, {profile.name.split(' ')[0]}!
             </h1>
-            <p className="text-muted-foreground">
-              {sessions.length > 0
-                ? `You have ${sessions.length} screening${sessions.length !== 1 ? 's' : ''} on record.`
-                : 'Your profile is all set. Start your first screening!'}
-            </p>
+            <p className="text-muted-foreground">{welcomeMessage}</p>
           </div>
           {/* Risk badge */}
           <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 ${risk.bg} ${risk.border}`}>
@@ -178,7 +185,7 @@ const PatientDashboardScreen = ({
             </Card>
 
             {/* Provider card */}
-            <Card className={!profile.provider ? 'border-dashed border-2 border-primary/30' : ''}>
+            <Card className={hasProvider ? '' : 'border-dashed border-2 border-primary/30'}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <Stethoscope className="h-4 w-4 text-primary" />
@@ -239,10 +246,10 @@ const PatientDashboardScreen = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {latestInsights.map((insight, i) => {
-                    const levelColor = insight.level === 'high' ? 'border-l-destructive' : insight.level === 'moderate' ? 'border-l-warning' : 'border-l-success';
+                  {latestInsights.map((insight) => {
+                    const levelColor = getInsightBorder(insight.level);
                     return (
-                      <div key={i} className={`rounded-lg border-l-4 bg-secondary/30 p-3 ${levelColor}`}>
+                      <div key={`${insight.category}-${insight.description}`} className={`rounded-lg border-l-4 bg-secondary/30 p-3 ${levelColor}`}>
                         <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">{insight.category}</p>
                         <p className="text-sm text-foreground">{insight.description}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{insight.suggestion}</p>

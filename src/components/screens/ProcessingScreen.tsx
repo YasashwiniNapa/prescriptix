@@ -12,6 +12,7 @@ const steps = [
   { icon: Zap, text: 'Generating insights…' },
 ];
 
+// timed loading steps before insights are ready
 const ProcessingScreen = ({ onComplete }: ProcessingScreenProps) => {
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -41,7 +42,7 @@ const ProcessingScreen = ({ onComplete }: ProcessingScreenProps) => {
             const active = i <= currentStep;
             return (
               <motion.div
-                key={i}
+                key={step.text}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: active ? 1 : 0.3, x: 0 }}
                 transition={{ delay: i * 0.2 }}

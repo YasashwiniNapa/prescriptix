@@ -32,7 +32,7 @@ export interface MLMetrics {
   trainingDate: string;
 }
 
-// Configure this to point at your FastAPI backend
+// configure this to point at your fastapi backend
 let baseUrl = '';
 
 export function setMLApiBaseUrl(url: string) {

@@ -29,6 +29,7 @@ const pageVariants = {
   exit: { opacity: 0, x: -40, transition: { duration: 0.2 } },
 };
 
+// main app flow controller and screen router
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const [step, setStep] = useState<AppStep | 'auth' | 'loading'>('loading');
@@ -45,7 +46,7 @@ const Index = () => {
   const [advisoryLoading, setAdvisoryLoading] = useState(false);
   const [advisoryError, setAdvisoryError] = useState<string | null>(null);
 
-  // On auth state change, load user data
+  // on auth change, hydrate profile + sessions and pick the starting step
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -76,6 +77,7 @@ const Index = () => {
     init();
   }, [user, authLoading]);
 
+  // camera stream is kept to feed the live screening screen
   const handleCameraReady = (mediaStream: MediaStream) => {
     setStream(mediaStream);
     setStep('screening');
@@ -110,6 +112,7 @@ const Index = () => {
     setStep('processing');
   };
 
+  // derive insights, persist session, then request the advisory agent
   const handleProcessingComplete = useCallback(async () => {
     const ins = generateInsights(symptoms);
     setInsights(ins);
@@ -162,11 +165,11 @@ const Index = () => {
   }, [symptoms, profile, user]);
 
   const handleHospitalsContinue = () => {
-    if (!profile) {
-      setStep('profile-setup');
-    } else {
+    if (profile) {
       setStep('patient-dashboard');
+      return;
     }
+    setStep('profile-setup');
   };
 
   const handleProfileComplete = async (newProfile: PatientProfile) => {

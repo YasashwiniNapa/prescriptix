@@ -18,18 +18,19 @@ interface IntakeFormScreenProps {
   onSubmit: (data: IntakeFormData) => void;
 }
 
+// intake form prefilled from screening and voice transcript
 const IntakeFormScreen = ({ symptoms, screeningResult, voiceTranscript, onSubmit }: IntakeFormScreenProps) => {
   const checkedSymptoms = symptoms.filter(s => s.checked).map(s => s.label).join(', ');
 
-  // Auto-derive severity from screening result
+  // auto-derive severity from screening result
   const autoSeverity = screeningResult
     ? Math.min(10, Math.round((screeningResult.fatigueScore + screeningResult.feverRisk + screeningResult.asymmetryScore) * 10))
     : 5;
 
-  // Auto-derive duration hint from fatigue score
+  // auto-derive duration hint from fatigue score
   const autoDuration = screeningResult && screeningResult.fatigueScore > 0.6 ? '2-3 days' : '';
 
-  // Auto-derive notes from AI findings
+  // auto-derive notes from ai findings
   const autoNotes = [
     screeningResult?.droopyEyes ? 'AI detected droopy eyelids during screening.' : '',
     screeningResult && screeningResult.feverRisk > 0.4 ? `Thermal scan indicated elevated temperature risk (${Math.round(screeningResult.feverRisk * 100)}%).` : '',

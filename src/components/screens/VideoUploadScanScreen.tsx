@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Play, Loader2, AlertTriangle, CheckCircle2, Shield, BarChart3, X } from 'lucide-react';
+import { Upload, Loader2, AlertTriangle, CheckCircle2, Shield, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { extractLandmarksFromVideo } from '@/lib/landmark-service';
@@ -28,6 +28,13 @@ const riskLabels = {
   high: 'High Asymmetry Pattern',
 };
 
+const getStatusDotClass = (status: 'normal' | 'warning' | 'alert') => {
+  if (status === 'alert') return 'bg-destructive';
+  if (status === 'warning') return 'bg-warning';
+  return 'bg-success';
+};
+
+// processes an uploaded video and scores asymmetry
 const VideoUploadScanScreen = ({ onBack }: VideoUploadScanScreenProps) => {
   const [state, setState] = useState<ScanState>('idle');
   const [progress, setProgress] = useState(0);
@@ -97,7 +104,7 @@ const VideoUploadScanScreen = ({ onBack }: VideoUploadScanScreenProps) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('video/')) processVideo(file);
+    if (file?.type.startsWith('video/')) processVideo(file);
   };
 
   const reset = () => {
@@ -214,23 +221,15 @@ const VideoUploadScanScreen = ({ onBack }: VideoUploadScanScreenProps) => {
 
                   {/* Detail breakdown */}
                   <div className="space-y-2">
-                    {result.details.map((d, i) => {
-                      const statusColor =
-                        d.status === 'alert' ? 'text-destructive' :
-                        d.status === 'warning' ? 'text-warning' : 'text-success';
-                      return (
-                        <div key={i} className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
+                    {result.details.map((d) => (
+                      <div key={d.label} className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
                           <span className="text-sm text-foreground">{d.label}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-mono text-muted-foreground">{d.value.toFixed(4)}</span>
-                            <div className={`h-2 w-2 rounded-full ${
-                              d.status === 'alert' ? 'bg-destructive' :
-                              d.status === 'warning' ? 'bg-warning' : 'bg-success'
-                            }`} />
+                            <div className={`h-2 w-2 rounded-full ${getStatusDotClass(d.status)}`} />
                           </div>
-                        </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

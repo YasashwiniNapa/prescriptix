@@ -61,6 +61,7 @@ export function scoreAggregated(agg: AggregatedFeatures): RiskResult {
   return buildResult(agg.mean.compositeScore, agg.mean);
 }
 
+// internal helper to build a normalized risk result
 function buildResult(composite: number, features: SymmetryFeatures): RiskResult {
   const { moderateThreshold, highThreshold } = currentThresholds;
 
@@ -80,8 +81,11 @@ function buildResult(composite: number, features: SymmetryFeatures): RiskResult 
     midface: { warn: 0.01, alert: 0.03 },
   };
 
-  const status = (val: number, t: { warn: number; alert: number }): 'normal' | 'warning' | 'alert' =>
-    val >= t.alert ? 'alert' : val >= t.warn ? 'warning' : 'normal';
+  const status = (val: number, t: { warn: number; alert: number }): 'normal' | 'warning' | 'alert' => {
+    if (val >= t.alert) return 'alert';
+    if (val >= t.warn) return 'warning';
+    return 'normal';
+  };
 
   const details = [
     { label: 'Lip Corner Asymmetry', value: features.lipCornerAsymmetry, status: status(features.lipCornerAsymmetry, detailThresholds.lipCorner) },

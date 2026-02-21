@@ -4,7 +4,7 @@
  * All features are normalized relative to face width to avoid scale bias.
  */
 
-import { LandmarkFrame, LandmarkPoint, LANDMARK_INDICES as LM } from './landmark-service';
+import { LandmarkPoint, LANDMARK_INDICES as LM } from './landmark-service';
 
 export interface SymmetryFeatures {
   /** Left vs right lip corner vertical displacement (normalized) */
@@ -43,11 +43,11 @@ export interface FeatureVector {
 // ── Helpers ──
 
 function dist(a: LandmarkPoint, b: LandmarkPoint): number {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 function dist3d(a: LandmarkPoint, b: LandmarkPoint): number {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 /** Face width for normalization (distance between temples) */
@@ -74,6 +74,7 @@ function angleFromHorizontal(a: LandmarkPoint, b: LandmarkPoint): number {
 
 export function extractSymmetryFeatures(landmarks: LandmarkPoint[]): SymmetryFeatures {
   if (landmarks.length < 468) {
+    // not enough landmarks, return a neutral baseline
     return emptyFeatures();
   }
 
@@ -160,6 +161,7 @@ export function extractSymmetryFeatures(landmarks: LandmarkPoint[]): SymmetryFea
 }
 
 function emptyFeatures(): SymmetryFeatures {
+  // zeroed features represent a neutral, symmetric face
   return {
     lipCornerAsymmetry: 0, smileAngleAsymmetry: 0, eyeApertureRatio: 1,
     earLeft: 0, earRight: 0, browHeightDelta: 0, jawlineDeviation: 0,

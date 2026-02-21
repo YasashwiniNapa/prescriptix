@@ -28,12 +28,16 @@ export async function captureAmbientSubtractionFrames(
   video: HTMLVideoElement,
   flashOverlay: HTMLDivElement,
 ): Promise<AmbientSubtractionFrames> {
+  // capture a baseline frame, then a flash-illuminated frame
   const canvas = document.createElement('canvas');
   const w = video.videoWidth || video.clientWidth;
   const h = video.videoHeight || video.clientHeight;
   canvas.width = w;
   canvas.height = h;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) {
+    throw new Error('2d context unavailable');
+  }
 
   // 1. Capture ambient frame (current room lighting)
   ctx.drawImage(video, 0, 0, w, h);
@@ -65,6 +69,7 @@ export function subtractFrames(
   flashData: ImageData,
   ambientData: ImageData,
 ): ImageData {
+  // subtract ambient contribution per pixel to isolate reflectance
   const w = flashData.width;
   const h = flashData.height;
   const result = new ImageData(w, h);

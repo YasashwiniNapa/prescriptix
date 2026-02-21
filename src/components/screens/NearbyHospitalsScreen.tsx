@@ -22,6 +22,15 @@ interface NearbyHospitalsScreenProps {
   overallRisk: 'low' | 'moderate' | 'high';
 }
 
+const matchesCategory = (categories: string[], pattern: RegExp) =>
+  categories.some(category => pattern.test(category));
+
+const byCategoryPriority = (pattern: RegExp) => (a: NearbyHospital, b: NearbyHospital) => {
+  const aScore = matchesCategory(a.categories, pattern) ? 0 : 1;
+  const bScore = matchesCategory(b.categories, pattern) ? 0 : 1;
+  return aScore - bScore;
+};
+
 const URGENCY_CONFIG = {
   high: {
     label: 'Urgent — Emergency Rooms',
@@ -49,6 +58,7 @@ const URGENCY_CONFIG = {
   },
 };
 
+// finds nearby facilities based on risk level and location
 const NearbyHospitalsScreen = ({ onContinue, onSkip, overallRisk }: NearbyHospitalsScreenProps) => {
   const [hospitals, setHospitals] = useState<NearbyHospital[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,18 +88,10 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip, overallRisk }: NearbyHospit
           // Client-side filtering by category tags based on risk
           if (overallRisk === 'high') {
             // Prioritize results with emergency/urgent/hospital categories
-            results = results.sort((a, b) => {
-              const aScore = a.categories.some(c => /emergency|urgent/i.test(c)) ? 0 : 1;
-              const bScore = b.categories.some(c => /emergency|urgent/i.test(c)) ? 0 : 1;
-              return aScore - bScore;
-            });
+            results = results.sort(byCategoryPriority(/emergency|urgent/i));
           } else if (overallRisk === 'low') {
             // Prioritize clinics, doctors, general practitioners
-            results = results.sort((a, b) => {
-              const aScore = a.categories.some(c => /clinic|doctor|physician|general/i.test(c)) ? 0 : 1;
-              const bScore = b.categories.some(c => /clinic|doctor|physician|general/i.test(c)) ? 0 : 1;
-              return aScore - bScore;
-            });
+            results = results.sort(byCategoryPriority(/clinic|doctor|physician|general/i));
           }
 
           setHospitals(results);

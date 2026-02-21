@@ -10,6 +10,7 @@ interface ResultsScreenProps {
   onContinue: (symptoms: SymptomItem[]) => void;
 }
 
+// lets users confirm, remove, or add symptoms
 const ResultsScreen = ({ symptoms: initialSymptoms, onContinue }: ResultsScreenProps) => {
   const [symptoms, setSymptoms] = useState<SymptomItem[]>(initialSymptoms);
   const [newSymptom, setNewSymptom] = useState('');

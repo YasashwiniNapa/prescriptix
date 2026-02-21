@@ -50,6 +50,7 @@ interface State {
   toasts: ToasterToast[];
 }
 
+// track removal timers to avoid double-queueing
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 const addToRemoveQueue = (toastId: string) => {
@@ -125,6 +126,7 @@ const listeners: Array<(state: State) => void> = [];
 
 let memoryState: State = { toasts: [] };
 
+// in-memory reducer broadcast for all subscribers
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action);
   listeners.forEach((listener) => {

@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Square, Play, SkipForward, Loader2 } from 'lucide-react';
+import { Mic, Square, Play, SkipForward, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ interface VoiceInputScreenProps {
   onSkip: () => void;
 }
 
+// records audio and transcribes to prefill intake text
 const VoiceInputScreen = ({ onComplete, onSkip }: VoiceInputScreenProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
@@ -197,7 +198,9 @@ const VoiceInputScreen = ({ onComplete, onSkip }: VoiceInputScreenProps) => {
                   <span className="text-sm font-medium text-foreground">Recording saved</span>
                   <span className="ml-auto text-xs text-muted-foreground">{formatTime(duration)}</span>
                 </div>
-                <audio src={audioURL} controls className="w-full h-8" />
+                <audio src={audioURL} controls className="w-full h-8">
+                  <track kind="captions" srcLang="en" label="captions" />
+                </audio>
               </div>
 
               {/* Transcribing indicator */}

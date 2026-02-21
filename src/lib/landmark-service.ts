@@ -71,7 +71,7 @@ export const LANDMARK_INDICES = {
  * Returns an object with methods to process frames.
  */
 export async function createLandmarkExtractor() {
-  // Dynamic import for MediaPipe (works with bundler)
+  // dynamic import keeps initial bundle smaller
   const { FaceMesh } = await import('@mediapipe/face_mesh');
 
   const faceMesh = new FaceMesh({
@@ -156,7 +156,10 @@ export async function extractLandmarksFromVideo(
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('2d context unavailable');
+  }
 
   let currentTime = 0;
   const totalFrames = Math.ceil(duration * targetFps);

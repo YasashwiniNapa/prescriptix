@@ -23,6 +23,7 @@ interface AddProviderScreenProps {
   onBack: () => void;
 }
 
+// lets users assign or edit a provider after onboarding
 const AddProviderScreen = ({ currentProvider, currentSpecialty, currentLocation, onSave, onBack }: AddProviderScreenProps) => {
   const [nearbyProviders, setNearbyProviders] = useState<NearbyProvider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,12 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, currentLocation,
     return 'bg-secondary text-secondary-foreground border-border';
   };
 
+  const hasNearbyProviders = nearbyProviders.length > 0;
+  const showNearbyList = !loading && hasNearbyProviders && !useCustom;
+  const showNoNearby = !loading && !hasNearbyProviders && !useCustom;
+  const showCustomInputs = !loading && (useCustom || !hasNearbyProviders);
+  const showCustomToggle = !loading && !useCustom && hasNearbyProviders;
+  const showNearbyToggle = !loading && useCustom && hasNearbyProviders;
   const canSave = provider.trim().length > 0;
 
   return (
@@ -115,7 +122,8 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, currentLocation,
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">Finding nearby providers…</span>
               </div>
-            ) : nearbyProviders.length > 0 && !useCustom ? (
+            ) : null}
+            {showNearbyList ? (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {nearbyProviders.map((p, i) => (
                   <button
@@ -169,29 +177,25 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, currentLocation,
               </div>
             )}
 
-            {!loading && (
-              <>
-                {!useCustom && nearbyProviders.length > 0 && (
-                  <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
-                    <PenLine className="h-3.5 w-3.5" />
-                    Enter specialty manually instead
+            {showCustomToggle && (
+              <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
+                <PenLine className="h-3.5 w-3.5" />
+                Enter specialty manually instead
+              </Button>
+            )}
+            {showCustomInputs && (
+              <div className="space-y-4">
+                {showNearbyToggle && (
+                  <Button variant="ghost" size="sm" onClick={() => setUseCustom(false)} className="gap-1.5 text-primary w-full">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Choose from nearby facilities
                   </Button>
                 )}
-                {(useCustom || nearbyProviders.length === 0) && (
-                  <div className="space-y-4">
-                    {nearbyProviders.length > 0 && (
-                      <Button variant="ghost" size="sm" onClick={() => setUseCustom(false)} className="gap-1.5 text-primary w-full">
-                        <MapPin className="h-3.5 w-3.5" />
-                        Choose from nearby facilities
-                      </Button>
-                    )}
-                    <div>
-                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
-                      <Input value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
-                    </div>
-                  </div>
-                )}
-              </>
+                <div>
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
+                  <Input value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

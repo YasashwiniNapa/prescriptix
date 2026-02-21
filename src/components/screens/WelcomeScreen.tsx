@@ -8,6 +8,7 @@ interface WelcomeScreenProps {
   onVideoUpload?: () => void;
 }
 
+// marketing and entry screen for starting scans
 const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-hero">

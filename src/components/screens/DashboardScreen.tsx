@@ -22,6 +22,7 @@ const levelColors = {
   high: 'border-l-destructive',
 };
 
+// summary view for insights and next actions
 const DashboardScreen = ({ insights, overallRisk, onHistory, onNewScan }: DashboardScreenProps) => {
   const risk = riskConfig[overallRisk];
   const RiskIcon = risk.icon;
@@ -53,7 +54,7 @@ const DashboardScreen = ({ insights, overallRisk, onHistory, onNewScan }: Dashbo
         <div className="mb-8 space-y-4">
           {insights.map((insight, i) => (
             <motion.div
-              key={i}
+              key={`${insight.category}-${insight.description}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}

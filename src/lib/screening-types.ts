@@ -70,6 +70,7 @@ export interface PatientProfile {
   conditions: string[];
 }
 
+// app step names for the main screen flow state machine
 export type AppStep = 
   | 'welcome'
   | 'camera'

@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { PatientProfile, ScreeningSession, SymptomItem, HealthInsight } from './screening-types';
 
+// load the current user's profile row into the ui shape
 export async function loadProfile(): Promise<PatientProfile | null> {
   const { data } = await supabase.from('profiles').select('*').maybeSingle();
   if (!data) return null;
@@ -51,6 +52,7 @@ export async function getProfileId(): Promise<string | null> {
   return data?.id ?? null;
 }
 
+// persists a session plus its symptoms and insights
 export async function saveSession(
   profileId: string,
   symptoms: SymptomItem[],

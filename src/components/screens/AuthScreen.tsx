@@ -13,6 +13,7 @@ interface AuthScreenProps {
   onAuth: () => void;
 }
 
+// handles login and signup against supabase auth
 const AuthScreen = ({ onAuth }: AuthScreenProps) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
           password,
           options: {
             data: { full_name: name },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: globalThis.location.origin,
           },
         });
         if (error) throw error;

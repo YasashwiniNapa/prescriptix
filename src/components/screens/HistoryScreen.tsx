@@ -14,6 +14,7 @@ const riskBadge = {
   high: { className: 'bg-destructive/10 text-destructive', icon: AlertTriangle },
 };
 
+// timeline of previous screening sessions
 const HistoryScreen = ({ sessions, onBack }: HistoryScreenProps) => {
   return (
     <div className="flex min-h-screen flex-col px-6 py-12 gradient-hero">

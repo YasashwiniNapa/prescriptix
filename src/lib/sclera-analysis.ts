@@ -11,7 +11,7 @@
  * - Blue chromaticity B/(R+G+B) as lightweight alternative
  */
 
-import { LandmarkPoint, LANDMARK_INDICES as LM } from './landmark-service';
+import { LandmarkPoint } from './landmark-service';
 
 export interface ScleraYellownessResult {
   /** CIE L*a*b* b-channel yellowness (0 = neutral, higher = more yellow) */
@@ -54,7 +54,10 @@ export function extractScleraPixels(
   landmarks: LandmarkPoint[],
   canvas: HTMLCanvasElement,
 ): { leftPixels: Uint8ClampedArray; rightPixels: Uint8ClampedArray; totalSamples: number } {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) {
+    throw new Error('2d context unavailable');
+  }
   const w = video.videoWidth || video.clientWidth;
   const h = video.videoHeight || video.clientHeight;
   canvas.width = w;
@@ -81,6 +84,7 @@ function extractEyeScleraPixels(
   w: number,
   h: number,
 ): Uint8ClampedArray {
+  // isolate sclera pixels by eye contour, excluding iris polygon
   // Build eye contour polygon
   const contour = contourIndices
     .filter(i => i < landmarks.length)
@@ -146,8 +150,8 @@ function rgbToXyz(r: number, g: number, b: number): [number, number, number] {
   const lb = srgbToLinear(b);
   return [
     lr * 0.4124564 + lg * 0.3575761 + lb * 0.1804375,
-    lr * 0.2126729 + lg * 0.7151522 + lb * 0.0721750,
-    lr * 0.0193339 + lg * 0.1191920 + lb * 0.9503041,
+    lr * 0.2126729 + lg * 0.7151522 + lb * 0.072175,
+    lr * 0.0193339 + lg * 0.119192 + lb * 0.9503041,
   ];
 }
 
@@ -160,7 +164,7 @@ function labF(t: number): number {
 /** Convert XYZ to CIE L*a*b* (D65 reference white) */
 function xyzToLab(x: number, y: number, z: number): [number, number, number] {
   // D65 reference white
-  const xn = 0.95047, yn = 1.00000, zn = 1.08883;
+  const xn = 0.95047, yn = 1, zn = 1.08883;
   const fx = labF(x / xn);
   const fy = labF(y / yn);
   const fz = labF(z / zn);
@@ -207,12 +211,10 @@ export function computeBlueChromaticity(pixels: Uint8ClampedArray): number {
 
   let totalB = 0;
   let totalSum = 0;
-  const count = pixels.length / 4;
-
   for (let i = 0; i < pixels.length; i += 4) {
     const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
     const sum = r + g + b;
-    if (sum > 30) { // Skip near-black pixels (shadow/eyelash)
+    if (sum > 30) { // skip near-black pixels (shadow/eyelash)
       totalB += b;
       totalSum += sum;
     }

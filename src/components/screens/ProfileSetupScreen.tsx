@@ -38,6 +38,7 @@ interface ProviderStepProps {
   onComplete: () => void;
 }
 
+// step 2 collects provider details, optionally from nearby locations
 const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps) => {
   const [nearbyProviders, setNearbyProviders] = useState<NearbyProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(true);
@@ -85,6 +86,12 @@ const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps
     return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
   };
 
+  const hasNearbyProviders = nearbyProviders.length > 0;
+  const showNearbyList = !loadingProviders && hasNearbyProviders && !useCustom;
+  const showCustomInputs = !loadingProviders && (useCustom || !hasNearbyProviders);
+  const showCustomToggle = !loadingProviders && !useCustom && hasNearbyProviders;
+  const showNearbyToggle = !loadingProviders && useCustom && hasNearbyProviders;
+
   return (
     <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
       <Card>
@@ -101,11 +108,12 @@ const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
               <span className="text-sm text-muted-foreground">Finding nearby providers…</span>
             </div>
-          ) : nearbyProviders.length > 0 && !useCustom ? (
+          ) : null}
+          {showNearbyList && (
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {nearbyProviders.map((p, i) => (
                 <button
-                  key={`${p.name}-${i}`}
+                  key={`${p.name}-${p.address}`}
                   type="button"
                   onClick={() => selectProvider(i)}
                   className={`w-full text-left rounded-lg border p-3 transition-colors ${
@@ -132,36 +140,32 @@ const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps
                 </button>
               ))}
             </div>
-          ) : null}
+          )}
 
           {/* Custom toggle or custom inputs */}
-          {!loadingProviders && (
-            <>
-              {!useCustom && nearbyProviders.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
-                  <PenLine className="h-3.5 w-3.5" />
-                  Enter provider manually instead
+          {showCustomToggle && (
+            <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
+              <PenLine className="h-3.5 w-3.5" />
+              Enter provider manually instead
+            </Button>
+          )}
+          {showCustomInputs && (
+            <div className="space-y-4">
+              {showNearbyToggle && (
+                <Button variant="ghost" size="sm" onClick={() => { setUseCustom(false); }} className="gap-1.5 text-primary w-full">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Choose from nearby providers
                 </Button>
               )}
-              {(useCustom || nearbyProviders.length === 0) && (
-                <div className="space-y-4">
-                  {nearbyProviders.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={() => { setUseCustom(false); }} className="gap-1.5 text-primary w-full">
-                      <MapPin className="h-3.5 w-3.5" />
-                      Choose from nearby providers
-                    </Button>
-                  )}
-                  <div>
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Provider / Doctor Name</Label>
-                    <Input value={profile.provider} onChange={e => update('provider', e.target.value)} placeholder="Dr. Smith" className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
-                    <Input value={profile.providerSpecialty} onChange={e => update('providerSpecialty', e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
-                  </div>
-                </div>
-              )}
-            </>
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Provider / Doctor Name</Label>
+                <Input value={profile.provider} onChange={e => update('provider', e.target.value)} placeholder="Dr. Smith" className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
+                <Input value={profile.providerSpecialty} onChange={e => update('providerSpecialty', e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
+              </div>
+            </div>
           )}
 
           {/* Allergies & Medications always visible */}
@@ -186,6 +190,7 @@ const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps
   );
 };
 
+// step-based profile setup or edit flow
 const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, prefillAllergies, prefillMedications, prefillConditions, editMode, existingProfile, onComplete, onBack }: ProfileSetupScreenProps) => {
   const [profile, setProfile] = useState<PatientProfile>(
     existingProfile
@@ -211,6 +216,12 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
     setProfile(prev => ({ ...prev, [field]: value }));
 
   const canProceed = profile.name.trim() !== '' && profile.dob !== '';
+  let subtitle = 'Add your provider details.';
+  if (editMode) {
+    subtitle = 'Update your information below.';
+  } else if (step === 1) {
+    subtitle = 'Let\'s get your basic info set up.';
+  }
 
   return (
     <div className="min-h-screen bg-background px-4 py-8">
@@ -226,11 +237,7 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
           <h1 className="text-2xl font-bold font-display text-foreground">
             {editMode ? 'Edit Your Profile' : 'Create Your Profile'}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {editMode
-              ? 'Update your information below.'
-              : step === 1 ? 'Let\'s get your basic info set up.' : 'Add your provider details.'}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           {/* Step indicator */}
           {!editMode && (
             <div className="mt-4 flex justify-center gap-2">

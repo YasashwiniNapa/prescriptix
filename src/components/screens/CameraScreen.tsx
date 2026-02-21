@@ -7,6 +7,7 @@ interface CameraScreenProps {
   onCameraReady: (stream: MediaStream) => void;
 }
 
+// requests camera access and previews the stream
 const CameraScreen = ({ onCameraReady }: CameraScreenProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,15 @@ const CameraScreen = ({ onCameraReady }: CameraScreenProps) => {
           </div>
         )}
 
-        {!stream ? (
+        {stream ? (
+          <Button
+            onClick={handleContinue}
+            size="lg"
+            className="w-full gap-2 rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
+          >
+            Continue to Screening
+          </Button>
+        ) : (
           <Button
             onClick={enableCamera}
             disabled={loading}
@@ -89,14 +98,6 @@ const CameraScreen = ({ onCameraReady }: CameraScreenProps) => {
           >
             <Camera className="h-5 w-5" />
             {loading ? 'Requesting access…' : 'Enable Camera'}
-          </Button>
-        ) : (
-          <Button
-            onClick={handleContinue}
-            size="lg"
-            className="w-full gap-2 rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
-          >
-            Continue to Screening
           </Button>
         )}
 

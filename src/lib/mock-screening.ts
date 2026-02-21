@@ -1,22 +1,24 @@
 import { ScreeningResult, SymptomItem, HealthInsight, ScreeningSession } from './screening-types';
 
+// generates a randomized screening result for demos
 export function generateMockScreeningResult(): ScreeningResult {
-  const earLeft = parseFloat((0.2 + Math.random() * 0.15).toFixed(3));
-  const earRight = parseFloat((earLeft + (Math.random() * 0.06 - 0.03)).toFixed(3));
+  const earLeft = Number.parseFloat((0.2 + Math.random() * 0.15).toFixed(3));
+  const earRight = Number.parseFloat((earLeft + (Math.random() * 0.06 - 0.03)).toFixed(3));
   return {
     droopyEyes: earLeft < 0.25 || earRight < 0.25,
-    fatigueScore: parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
+    fatigueScore: Number.parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
     feverRisk: 0,
-    asymmetryScore: parseFloat((Math.abs(earLeft - earRight) + Math.random() * 0.2).toFixed(3)),
+    asymmetryScore: Number.parseFloat((Math.abs(earLeft - earRight) + Math.random() * 0.2).toFixed(3)),
     blinkRate: Math.floor(10 + Math.random() * 15),
     earLeft,
     earRight,
-    eyelidOpeningLeft: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
-    eyelidOpeningRight: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+    eyelidOpeningLeft: Number.parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+    eyelidOpeningRight: Number.parseFloat((2.5 + Math.random() * 3).toFixed(1)),
     swellingDetected: false,
   };
 }
 
+// maps raw signals into user-facing symptom labels
 export function resultToSymptoms(result: ScreeningResult): SymptomItem[] {
   const symptoms: SymptomItem[] = [];
   
@@ -79,12 +81,18 @@ export function generateInsights(symptoms: SymptomItem[]): HealthInsight[] {
 export function createSession(symptoms: SymptomItem[], insights: HealthInsight[]): ScreeningSession {
   const highCount = insights.filter(i => i.level === 'high').length;
   const modCount = insights.filter(i => i.level === 'moderate').length;
+  let overallRisk: 'low' | 'moderate' | 'high' = 'low';
+  if (highCount > 0) {
+    overallRisk = 'high';
+  } else if (modCount > 0) {
+    overallRisk = 'moderate';
+  }
   
   return {
     id: Date.now().toString(),
     date: new Date().toISOString(),
     symptoms,
     insights,
-    overallRisk: highCount > 0 ? 'high' : modCount > 0 ? 'moderate' : 'low',
+    overallRisk,
   };
 }

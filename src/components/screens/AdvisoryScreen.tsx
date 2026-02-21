@@ -22,6 +22,7 @@ const tierConfig = {
   High: { icon: ShieldAlert, color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/30', ring: 'ring-destructive/20' },
 };
 
+// renders the ai advisory or a fallback state
 const AdvisoryScreen = ({ advisory, loading, error, onContinue }: AdvisoryScreenProps) => {
   if (loading) {
     return (
@@ -55,6 +56,12 @@ const AdvisoryScreen = ({ advisory, loading, error, onContinue }: AdvisoryScreen
   const tier = tierConfig[advisory.severityTier] || tierConfig.Moderate;
   const TierIcon = tier.icon;
   const scorePercent = Math.round(advisory.severityScore * 100);
+  const tierBarClasses: Record<AgentAdvisory['severityTier'], string> = {
+    High: 'bg-destructive',
+    Moderate: 'bg-warning',
+    Low: 'bg-success',
+  };
+  const tierBarClass = tierBarClasses[advisory.severityTier];
 
   return (
     <div className="flex min-h-screen flex-col items-center px-6 py-12 gradient-hero">
@@ -89,10 +96,7 @@ const AdvisoryScreen = ({ advisory, loading, error, onContinue }: AdvisoryScreen
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
                     <motion.div
-                      className={`h-full rounded-full ${
-                        advisory.severityTier === 'High' ? 'bg-destructive' :
-                        advisory.severityTier === 'Moderate' ? 'bg-warning' : 'bg-success'
-                      }`}
+                      className={`h-full rounded-full ${tierBarClass}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${scorePercent}%` }}
                       transition={{ delay: 0.3, duration: 0.8, ease: 'easeOut' }}
