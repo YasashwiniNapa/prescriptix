@@ -32,9 +32,13 @@ serve(async (req) => {
 
     const insightsJson = JSON.stringify(insights);
 
+    console.log("Calling Azure endpoint:", AZURE_AGENT_ENDPOINT);
+
+    // Try api-key header first (Azure OpenAI standard), fall back to Bearer
     const response = await fetch(AZURE_AGENT_ENDPOINT, {
       method: "POST",
       headers: {
+        "api-key": AZURE_AGENT_KEY,
         "Authorization": `Bearer ${AZURE_AGENT_KEY}`,
         "Content-Type": "application/json",
       },
