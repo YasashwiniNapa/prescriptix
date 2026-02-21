@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { Shield, Eye, Sparkles } from 'lucide-react';
+import { Shield, Eye, Sparkles, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WelcomeScreenProps {
   onStart: () => void;
+  onVideoUpload?: () => void;
 }
 
-const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-hero">
       <motion.div
@@ -29,20 +30,34 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           HealthScan
         </h1>
         <p className="mb-2 text-lg font-medium text-foreground/80 font-display">
-          Visual Health Prescreening
+          Facial Asymmetry Screening
         </p>
         <p className="mb-10 text-muted-foreground leading-relaxed">
-          We'll perform a quick visual health screening to personalize your checkup. It only takes a moment.
+          We'll perform a quick facial landmark analysis to screen for neurological asymmetry patterns. It only takes a moment.
         </p>
 
-        <Button
-          onClick={onStart}
-          size="lg"
-          className="w-full gap-2 rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
-        >
-          <Sparkles className="h-5 w-5" />
-          Start Check
-        </Button>
+        <div className="space-y-3">
+          <Button
+            onClick={onStart}
+            size="lg"
+            className="w-full gap-2 rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
+          >
+            <Sparkles className="h-5 w-5" />
+            Live Camera Scan
+          </Button>
+
+          {onVideoUpload && (
+            <Button
+              onClick={onVideoUpload}
+              size="lg"
+              variant="outline"
+              className="w-full gap-2 rounded-xl py-6 text-base font-semibold"
+            >
+              <Upload className="h-5 w-5" />
+              Upload Video Scan
+            </Button>
+          )}
+        </div>
 
         {/* Features */}
         <motion.div
@@ -65,11 +80,16 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           ))}
         </motion.div>
 
-        {/* Privacy */}
-        <p className="mt-8 text-xs text-muted-foreground/70">
-          <Shield className="mr-1 inline h-3 w-3" />
-          Your data is processed locally and never stored without consent.
-        </p>
+        {/* Privacy + Disclaimer */}
+        <div className="mt-8 space-y-1">
+          <p className="text-xs text-muted-foreground/70">
+            <Shield className="mr-1 inline h-3 w-3" />
+            Your data is processed locally and never stored without consent.
+          </p>
+          <p className="text-[10px] text-muted-foreground/50">
+            This tool provides asymmetry risk screening only — not a medical diagnosis.
+          </p>
+        </div>
       </motion.div>
     </div>
   );

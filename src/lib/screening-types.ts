@@ -72,4 +72,5 @@ export type AppStep =
   | 'profile-setup'
   | 'patient-dashboard'
   | 'dashboard'
-  | 'history';
+  | 'history'
+  | 'video-upload';
