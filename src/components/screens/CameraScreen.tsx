@@ -32,10 +32,11 @@ const CameraScreen = ({ onCameraReady }: CameraScreenProps) => {
   }, []);
 
   useEffect(() => {
+    enableCamera();
     return () => {
       stream?.getTracks().forEach(t => t.stop());
     };
-  }, [stream]);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleContinue = () => {
     if (stream) onCameraReady(stream);
