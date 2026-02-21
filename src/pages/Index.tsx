@@ -30,12 +30,15 @@ const Index = () => {
     setStep('screening');
   };
 
+  const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
+
   const handleScreeningComplete = (result: ScreeningResult) => {
     // Stop camera
     stream?.getTracks().forEach(t => t.stop());
     setStream(null);
     const syms = resultToSymptoms(result);
     setSymptoms(syms);
+    setScreeningResult(result);
     setStep('results');
   };
 
@@ -70,7 +73,7 @@ const Index = () => {
           <VisualScreeningScreen stream={stream} onComplete={handleScreeningComplete} />
         )}
         {step === 'results' && <ResultsScreen symptoms={symptoms} onContinue={handleResultsContinue} />}
-        {step === 'intake' && <IntakeFormScreen symptoms={symptoms} onSubmit={handleIntakeSubmit} />}
+        {step === 'intake' && <IntakeFormScreen symptoms={symptoms} screeningResult={screeningResult} onSubmit={handleIntakeSubmit} />}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
         {step === 'dashboard' && (
           <DashboardScreen
