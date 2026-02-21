@@ -19,6 +19,8 @@ import HistoryScreen from '@/components/screens/HistoryScreen';
 import ProfileSetupScreen from '@/components/screens/ProfileSetupScreen';
 import PatientDashboardScreen from '@/components/screens/PatientDashboardScreen';
 import AddProviderScreen from '@/components/screens/AddProviderScreen';
+import AdvisoryScreen, { AgentAdvisory } from '@/components/screens/AdvisoryScreen';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 const pageVariants = {
@@ -39,6 +41,9 @@ const Index = () => {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [intakeData, setIntakeData] = useState<IntakeFormData | null>(null);
+  const [advisory, setAdvisory] = useState<AgentAdvisory | null>(null);
+  const [advisoryLoading, setAdvisoryLoading] = useState(false);
+  const [advisoryError, setAdvisoryError] = useState<string | null>(null);
 
   // On auth state change, load user data
   useEffect(() => {
@@ -129,8 +134,31 @@ const Index = () => {
       setSessions(prev => [session, ...prev]);
     }
 
-    // Always go to hospitals screen after processing
-    setStep('nearby-hospitals');
+    // Go to advisory screen and call Azure Agent
+    setAdvisory(null);
+    setAdvisoryError(null);
+    setAdvisoryLoading(true);
+    setStep('advisory');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-insights', {
+        body: { insights: ins },
+      });
+      if (error) throw error;
+      setAdvisory(data as AgentAdvisory);
+      // Use agent's severity to override risk for hospital routing
+      if (data?.severityTier) {
+        const tierMap: Record<string, 'low' | 'moderate' | 'high'> = {
+          Low: 'low', Moderate: 'moderate', High: 'high',
+        };
+        setOverallRisk(tierMap[data.severityTier] || session.overallRisk);
+      }
+    } catch (err) {
+      console.error('Azure Agent error:', err);
+      setAdvisoryError('Could not reach the advisory agent. You can still continue.');
+    } finally {
+      setAdvisoryLoading(false);
+    }
   }, [symptoms, profile, user]);
 
   const handleHospitalsContinue = () => {
@@ -219,6 +247,14 @@ const Index = () => {
           />
         )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
+        {step === 'advisory' && (
+          <AdvisoryScreen
+            advisory={advisory}
+            loading={advisoryLoading}
+            error={advisoryError}
+            onContinue={() => setStep('nearby-hospitals')}
+          />
+        )}
         {step === 'nearby-hospitals' && (
           <NearbyHospitalsScreen
             onContinue={handleHospitalsContinue}
