@@ -12,15 +12,16 @@ interface ProfileSetupScreenProps {
   prefillName?: string;
   prefillDob?: string;
   prefillGender?: string;
+  prefillEmail?: string;
   onComplete: (profile: PatientProfile) => void;
 }
 
-const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, onComplete }: ProfileSetupScreenProps) => {
+const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, onComplete }: ProfileSetupScreenProps) => {
   const [profile, setProfile] = useState<PatientProfile>({
     name: prefillName || '',
     dob: prefillDob || '',
     gender: prefillGender || '',
-    email: '',
+    email: prefillEmail || '',
     phone: '',
     provider: '',
     providerSpecialty: '',

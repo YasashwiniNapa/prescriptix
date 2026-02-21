@@ -201,8 +201,9 @@ const Index = () => {
         )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
         {step === 'profile-setup' && (
-          <ProfileSetupScreen
+        <ProfileSetupScreen
             prefillName={user?.user_metadata?.full_name}
+            prefillEmail={user?.email}
             onComplete={handleProfileComplete}
           />
         )}
