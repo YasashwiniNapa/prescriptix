@@ -14,10 +14,11 @@ import { SymptomItem, IntakeFormData, ScreeningResult } from '@/lib/screening-ty
 interface IntakeFormScreenProps {
   symptoms: SymptomItem[];
   screeningResult?: ScreeningResult | null;
+  voiceTranscript?: string;
   onSubmit: (data: IntakeFormData) => void;
 }
 
-const IntakeFormScreen = ({ symptoms, screeningResult, onSubmit }: IntakeFormScreenProps) => {
+const IntakeFormScreen = ({ symptoms, screeningResult, voiceTranscript, onSubmit }: IntakeFormScreenProps) => {
   const checkedSymptoms = symptoms.filter(s => s.checked).map(s => s.label).join(', ');
 
   // Auto-derive severity from screening result
@@ -29,13 +30,12 @@ const IntakeFormScreen = ({ symptoms, screeningResult, onSubmit }: IntakeFormScr
   const autoDuration = screeningResult && screeningResult.fatigueScore > 0.6 ? '2-3 days' : '';
 
   // Auto-derive notes from AI findings
-  const autoNotes = screeningResult
-    ? [
-        screeningResult.droopyEyes ? 'AI detected droopy eyelids during screening.' : '',
-        screeningResult.feverRisk > 0.4 ? `Thermal scan indicated elevated temperature risk (${Math.round(screeningResult.feverRisk * 100)}%).` : '',
-        screeningResult.fatigueScore > 0.5 ? `Fatigue markers detected (score: ${screeningResult.fatigueScore}).` : '',
-      ].filter(Boolean).join(' ')
-    : '';
+  const autoNotes = [
+    screeningResult?.droopyEyes ? 'AI detected droopy eyelids during screening.' : '',
+    screeningResult && screeningResult.feverRisk > 0.4 ? `Thermal scan indicated elevated temperature risk (${Math.round(screeningResult.feverRisk * 100)}%).` : '',
+    screeningResult && screeningResult.fatigueScore > 0.5 ? `Fatigue markers detected (score: ${screeningResult.fatigueScore}).` : '',
+    voiceTranscript ? `\n\nPatient voice input: "${voiceTranscript}"` : '',
+  ].filter(Boolean).join(' ');
 
   const [form, setForm] = useState<IntakeFormData>({
     symptoms: checkedSymptoms,

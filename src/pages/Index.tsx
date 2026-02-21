@@ -6,6 +6,7 @@ import WelcomeScreen from '@/components/screens/WelcomeScreen';
 import CameraScreen from '@/components/screens/CameraScreen';
 import VisualScreeningScreen from '@/components/screens/VisualScreeningScreen';
 import ResultsScreen from '@/components/screens/ResultsScreen';
+import VoiceInputScreen from '@/components/screens/VoiceInputScreen';
 import IntakeFormScreen from '@/components/screens/IntakeFormScreen';
 import ProcessingScreen from '@/components/screens/ProcessingScreen';
 import DashboardScreen from '@/components/screens/DashboardScreen';
@@ -24,16 +25,15 @@ const Index = () => {
   const [insights, setInsights] = useState<HealthInsight[]>([]);
   const [overallRisk, setOverallRisk] = useState<'low' | 'moderate' | 'high'>('low');
   const [sessions, setSessions] = useState<ScreeningSession[]>([]);
+  const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
 
   const handleCameraReady = (mediaStream: MediaStream) => {
     setStream(mediaStream);
     setStep('screening');
   };
 
-  const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
-
   const handleScreeningComplete = (result: ScreeningResult) => {
-    // Stop camera
     stream?.getTracks().forEach(t => t.stop());
     setStream(null);
     const syms = resultToSymptoms(result);
@@ -44,6 +44,16 @@ const Index = () => {
 
   const handleResultsContinue = (updatedSymptoms: SymptomItem[]) => {
     setSymptoms(updatedSymptoms);
+    setStep('voice-input');
+  };
+
+  const handleVoiceComplete = (transcript: string) => {
+    setVoiceTranscript(transcript);
+    setStep('intake');
+  };
+
+  const handleVoiceSkip = () => {
+    setVoiceTranscript('');
     setStep('intake');
   };
 
@@ -73,7 +83,17 @@ const Index = () => {
           <VisualScreeningScreen stream={stream} onComplete={handleScreeningComplete} />
         )}
         {step === 'results' && <ResultsScreen symptoms={symptoms} onContinue={handleResultsContinue} />}
-        {step === 'intake' && <IntakeFormScreen symptoms={symptoms} screeningResult={screeningResult} onSubmit={handleIntakeSubmit} />}
+        {step === 'voice-input' && (
+          <VoiceInputScreen onComplete={handleVoiceComplete} onSkip={handleVoiceSkip} />
+        )}
+        {step === 'intake' && (
+          <IntakeFormScreen
+            symptoms={symptoms}
+            screeningResult={screeningResult}
+            voiceTranscript={voiceTranscript}
+            onSubmit={handleIntakeSubmit}
+          />
+        )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
         {step === 'dashboard' && (
           <DashboardScreen

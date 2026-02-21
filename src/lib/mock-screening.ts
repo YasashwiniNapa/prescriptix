@@ -1,12 +1,19 @@
 import { ScreeningResult, SymptomItem, HealthInsight, ScreeningSession } from './screening-types';
 
 export function generateMockScreeningResult(): ScreeningResult {
+  const earLeft = parseFloat((0.2 + Math.random() * 0.15).toFixed(3));
+  const earRight = parseFloat((earLeft + (Math.random() * 0.06 - 0.03)).toFixed(3));
   return {
-    droopyEyes: Math.random() > 0.5,
+    droopyEyes: earLeft < 0.25 || earRight < 0.25,
     fatigueScore: parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
     feverRisk: parseFloat((0.1 + Math.random() * 0.6).toFixed(2)),
-    asymmetryScore: parseFloat((Math.random() * 0.3).toFixed(2)),
+    asymmetryScore: parseFloat((Math.abs(earLeft - earRight)).toFixed(3)),
     blinkRate: Math.floor(10 + Math.random() * 15),
+    earLeft,
+    earRight,
+    eyelidOpeningLeft: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+    eyelidOpeningRight: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
+    swellingDetected: Math.random() > 0.6,
   };
 }
 
@@ -17,7 +24,13 @@ export function resultToSymptoms(result: ScreeningResult): SymptomItem[] {
     symptoms.push({ id: '1', label: 'Fatigue', checked: true, source: 'ai' });
   }
   if (result.droopyEyes) {
-    symptoms.push({ id: '2', label: 'Eye strain', checked: true, source: 'ai' });
+    symptoms.push({ id: '2', label: 'Droopy eyelids (low EAR)', checked: true, source: 'ai' });
+  }
+  if (result.earLeft < 0.25 || result.earRight < 0.25) {
+    symptoms.push({ id: '7', label: 'Eye strain / tired eyes', checked: true, source: 'ai' });
+  }
+  if (result.swellingDetected) {
+    symptoms.push({ id: '8', label: 'Facial swelling detected', checked: false, source: 'ai' });
   }
   if (result.feverRisk > 0.4) {
     symptoms.push({ id: '3', label: 'Fever symptoms', checked: false, source: 'ai' });
