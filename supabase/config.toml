@@ -2,3 +2,6 @@ project_id = "scmqxabmqljkoayzkbfn"
 
 [functions.transcribe]
 verify_jwt = false
+
+[functions.nearby-hospitals]
+verify_jwt = false

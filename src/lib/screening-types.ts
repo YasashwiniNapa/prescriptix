@@ -65,6 +65,7 @@ export type AppStep =
   | 'camera'
   | 'screening'
   | 'results'
+  | 'nearby-hospitals'
   | 'voice-input'
   | 'intake'
   | 'processing'
