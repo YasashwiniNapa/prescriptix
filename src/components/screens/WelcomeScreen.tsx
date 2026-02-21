@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Shield, Eye, Sparkles, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -21,13 +22,13 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-          className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl gradient-primary shadow-elevated"
+          className="mx-auto mb-8"
         >
-          <Eye className="h-10 w-10 text-primary-foreground" />
+          <img src={logo} alt="PreCheck logo" className="h-24 w-24 rounded-2xl shadow-elevated" />
         </motion.div>
 
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground font-display">
-          HealthScan
+          PreCheck
         </h1>
         <p className="mb-2 text-lg font-medium text-foreground/80 font-display">
           Facial Asymmetry Screening
