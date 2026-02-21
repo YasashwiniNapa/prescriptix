@@ -70,6 +70,7 @@ export type AppStep =
   | 'intake'
   | 'processing'
   | 'profile-setup'
+  | 'add-provider'
   | 'patient-dashboard'
   | 'dashboard'
   | 'history'

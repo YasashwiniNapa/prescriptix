@@ -18,6 +18,7 @@ import DashboardScreen from '@/components/screens/DashboardScreen';
 import HistoryScreen from '@/components/screens/HistoryScreen';
 import ProfileSetupScreen from '@/components/screens/ProfileSetupScreen';
 import PatientDashboardScreen from '@/components/screens/PatientDashboardScreen';
+import AddProviderScreen from '@/components/screens/AddProviderScreen';
 import { Loader2 } from 'lucide-react';
 
 const pageVariants = {
@@ -158,6 +159,21 @@ const Index = () => {
     setStep('patient-dashboard');
   };
 
+  const handleAddProviderSave = async (providerName: string, providerSpecialty: string) => {
+    if (profile) {
+      const updatedProfile = { ...profile, provider: providerName, providerSpecialty };
+      setProfile(updatedProfile);
+      if (user) {
+        try {
+          await saveProfile(updatedProfile, user.id);
+        } catch (err) {
+          console.error('Failed to save provider:', err);
+        }
+      }
+    }
+    setStep('patient-dashboard');
+  };
+
   const handleNewScan = () => {
     setStep('welcome');
   };
@@ -231,7 +247,16 @@ const Index = () => {
             onNewScan={handleNewScan}
             onHistory={() => setStep('history')}
             onEditProfile={() => setStep('profile-setup')}
+            onAddProvider={() => setStep('add-provider')}
             onSignOut={handleSignOut}
+          />
+        )}
+        {step === 'add-provider' && (
+          <AddProviderScreen
+            currentProvider={profile?.provider}
+            currentSpecialty={profile?.providerSpecialty}
+            onSave={handleAddProviderSave}
+            onBack={() => setStep('patient-dashboard')}
           />
         )}
         {step === 'dashboard' && (

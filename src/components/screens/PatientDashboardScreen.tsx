@@ -18,6 +18,7 @@ interface PatientDashboardScreenProps {
   onNewScan: () => void;
   onHistory: () => void;
   onEditProfile: () => void;
+  onAddProvider: () => void;
   onSignOut?: () => void;
 }
 
@@ -35,6 +36,7 @@ const PatientDashboardScreen = ({
   onNewScan,
   onHistory,
   onEditProfile,
+  onAddProvider,
   onSignOut,
 }: PatientDashboardScreenProps) => {
   const risk = riskConfig[overallRisk];
@@ -198,7 +200,7 @@ const PatientDashboardScreen = ({
                   <div className="text-center py-4">
                     <Stethoscope className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground mb-3">No provider assigned yet</p>
-                    <Button variant="outline" size="sm" onClick={onEditProfile} className="gap-1.5">
+                    <Button variant="outline" size="sm" onClick={onAddProvider} className="gap-1.5">
                       Add Provider
                       <ChevronRight className="h-3 w-3" />
                     </Button>
