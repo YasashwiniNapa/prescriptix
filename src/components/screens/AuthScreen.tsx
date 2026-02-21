@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Loader2 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,11 +62,11 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-elevated"
+            className="mx-auto mb-4"
           >
-            <Eye className="h-8 w-8 text-primary-foreground" />
+            <img src={logo} alt="Prescriptix logo" className="h-16 w-16 rounded-2xl shadow-elevated" />
           </motion.div>
-          <h1 className="text-2xl font-bold font-display text-foreground">HealthScan</h1>
+          <h1 className="text-2xl font-bold font-display text-foreground">Prescriptix</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === 'login' ? 'Sign in to your account' : 'Create your account'}
           </p>
