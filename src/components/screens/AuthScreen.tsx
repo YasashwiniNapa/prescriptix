@@ -58,12 +58,12 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
         className="w-full max-w-sm"
       >
         {/* Logo */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 flex flex-col items-center">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className="mx-auto mb-4"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="mb-4 flex justify-center"
           >
             <img src={logo} alt="Prescriptix logo" className="h-16 w-16 rounded-2xl shadow-elevated" />
           </motion.div>
