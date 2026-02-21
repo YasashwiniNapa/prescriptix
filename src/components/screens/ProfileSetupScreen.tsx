@@ -13,10 +13,13 @@ interface ProfileSetupScreenProps {
   prefillDob?: string;
   prefillGender?: string;
   prefillEmail?: string;
+  prefillAllergies?: string;
+  prefillMedications?: string;
+  prefillConditions?: string[];
   onComplete: (profile: PatientProfile) => void;
 }
 
-const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, onComplete }: ProfileSetupScreenProps) => {
+const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, prefillAllergies, prefillMedications, prefillConditions, onComplete }: ProfileSetupScreenProps) => {
   const [profile, setProfile] = useState<PatientProfile>({
     name: prefillName || '',
     dob: prefillDob || '',
@@ -25,9 +28,9 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
     phone: '',
     provider: '',
     providerSpecialty: '',
-    allergies: '',
-    medications: '',
-    conditions: [],
+    allergies: prefillAllergies || '',
+    medications: prefillMedications || '',
+    conditions: prefillConditions || [],
   });
 
   const [step, setStep] = useState<1 | 2>(1);
