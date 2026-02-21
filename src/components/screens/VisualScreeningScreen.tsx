@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ScreeningResult } from '@/lib/screening-types';
-import { Eye, Move, Activity, Shield, Thermometer } from 'lucide-react';
+import { Eye, Move, Activity, Shield } from 'lucide-react';
 import { createLandmarkExtractor, LandmarkFrame } from '@/lib/landmark-service';
 import { extractSymmetryFeatures, SymmetryFeatures, aggregateFeatures } from '@/lib/feature-engineering';
 import { scoreAggregated, RiskResult } from '@/lib/risk-scoring';
@@ -13,16 +13,15 @@ interface VisualScreeningScreenProps {
 
 const SCAN_DURATION = 45000;
 
-type Phase = 'detect' | 'thermal' | 'landmarks' | 'ear' | 'blink' | 'movement' | 'symmetry' | 'final';
+type Phase = 'detect' | 'landmarks' | 'ear' | 'blink' | 'movement' | 'symmetry' | 'final';
 
 const phases: { at: number; text: string; phase: Phase; detail: string }[] = [
   { at: 0, text: 'Detecting face…', phase: 'detect', detail: 'Locating facial region and aligning scan grid' },
-  { at: 8, text: 'Thermal scan in progress…', phase: 'thermal', detail: 'Analyzing skin surface temperature distribution' },
-  { at: 22, text: 'Mapping 468 facial landmarks…', phase: 'landmarks', detail: 'Extracting precise anatomical reference points' },
-  { at: 38, text: 'Measuring Eye Aspect Ratio…', phase: 'ear', detail: 'Computing vertical-to-horizontal eye opening ratio' },
-  { at: 52, text: 'Tracking blink rate…', phase: 'blink', detail: 'Monitoring eyelid closure frequency and duration' },
-  { at: 65, text: 'Please move your face slowly…', phase: 'movement', detail: 'Capturing asymmetry across head positions' },
-  { at: 80, text: 'Computing facial symmetry…', phase: 'symmetry', detail: 'Comparing left-right feature correspondence' },
+  { at: 10, text: 'Mapping 468 facial landmarks…', phase: 'landmarks', detail: 'Extracting precise anatomical reference points' },
+  { at: 25, text: 'Measuring Eye Aspect Ratio…', phase: 'ear', detail: 'Computing vertical-to-horizontal eye opening ratio' },
+  { at: 40, text: 'Tracking blink rate…', phase: 'blink', detail: 'Monitoring eyelid closure frequency and duration' },
+  { at: 55, text: 'Please move your face slowly…', phase: 'movement', detail: 'Capturing asymmetry across head positions' },
+  { at: 75, text: 'Computing facial symmetry…', phase: 'symmetry', detail: 'Comparing left-right feature correspondence' },
   { at: 92, text: 'Compiling results…', phase: 'final', detail: 'Aggregating all metrics into risk assessment' },
 ];
 
@@ -206,9 +205,9 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
     return () => clearInterval(interval);
   }, [onCompleteRef, blinkCount]);
 
-  const allPhaseKeys: Phase[] = ['detect', 'thermal', 'landmarks', 'ear', 'blink', 'movement', 'symmetry', 'final'];
+  const allPhaseKeys: Phase[] = ['detect', 'landmarks', 'ear', 'blink', 'movement', 'symmetry', 'final'];
   const phaseLabels: Record<Phase, string> = {
-    detect: 'detect', thermal: 'thermal', landmarks: 'landmarks', ear: 'EAR', blink: 'blink',
+    detect: 'detect', landmarks: 'landmarks', ear: 'EAR', blink: 'blink',
     movement: 'movement', symmetry: 'symmetry', final: 'final',
   };
 
@@ -295,54 +294,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
 
-          {/* Thermal heatmap overlay */}
-          <AnimatePresence>
-            {currentPhase === 'thermal' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.45 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8 }}
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse 50% 60% at 50% 45%, rgba(255,60,60,0.6) 0%, rgba(255,160,0,0.4) 30%, rgba(255,220,50,0.3) 50%, rgba(50,180,255,0.25) 70%, rgba(30,60,200,0.2) 90%, transparent 100%)',
-                  mixBlendMode: 'screen',
-                }}
-              />
-            )}
-          </AnimatePresence>
 
-          {/* Thermal temp readouts */}
-          <AnimatePresence>
-            {currentPhase === 'thermal' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 pointer-events-none"
-              >
-                {[
-                  { x: '38%', y: '35%', temp: '36.4°' },
-                  { x: '58%', y: '35%', temp: '36.5°' },
-                  { x: '48%', y: '52%', temp: '36.2°' },
-                  { x: '48%', y: '68%', temp: '35.8°' },
-                  { x: '30%', y: '50%', temp: '35.6°' },
-                  { x: '66%', y: '50%', temp: '35.7°' },
-                ].map((point, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute text-[10px] font-mono font-bold text-white drop-shadow-md"
-                    style={{ left: point.x, top: point.y }}
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: [0, 1, 0.8], scale: 1 }}
-                    transition={{ delay: i * 0.4, duration: 0.5 }}
-                  >
-                    {point.temp}
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Movement prompt overlay */}
           <AnimatePresence>
