@@ -54,7 +54,7 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
     const p = nearbyProviders[idx];
     setSelectedIdx(idx);
     setUseCustom(false);
-    setProvider(p.name);
+    // Only set the specialty/location from the list — doctor name stays manual
     setSpecialty(p.categories?.[0] || '');
   };
 
@@ -97,7 +97,7 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
         </div>
         <h2 className="mb-2 text-2xl font-bold font-display text-foreground">Add Your Provider</h2>
         <p className="mb-6 text-muted-foreground text-sm">
-          Choose from nearby healthcare facilities or enter your doctor's details manually.
+          Select a facility for location, then enter your doctor's name.
         </p>
 
         <Card className="mb-6">
@@ -155,16 +155,24 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
               </div>
             ) : !useCustom ? (
               <p className="text-center text-sm text-muted-foreground py-6">
-                No providers found nearby. Enter details manually below.
+                No facilities found nearby. Enter details manually below.
               </p>
             ) : null}
+
+            {/* Doctor name — always manual */}
+            {!loading && (
+              <div>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">Doctor / Provider Name</Label>
+                <Input value={provider} onChange={e => setProvider(e.target.value)} placeholder="Dr. Smith" className="mt-1" />
+              </div>
+            )}
 
             {!loading && (
               <>
                 {!useCustom && nearbyProviders.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
                     <PenLine className="h-3.5 w-3.5" />
-                    Enter provider manually instead
+                    Enter specialty manually instead
                   </Button>
                 )}
                 {(useCustom || nearbyProviders.length === 0) && (
@@ -172,13 +180,9 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
                     {nearbyProviders.length > 0 && (
                       <Button variant="ghost" size="sm" onClick={() => setUseCustom(false)} className="gap-1.5 text-primary w-full">
                         <MapPin className="h-3.5 w-3.5" />
-                        Choose from nearby providers
+                        Choose from nearby facilities
                       </Button>
                     )}
-                    <div>
-                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">Provider / Doctor Name</Label>
-                      <Input value={provider} onChange={e => setProvider(e.target.value)} placeholder="Dr. Smith" className="mt-1" />
-                    </div>
                     <div>
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
                       <Input value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
