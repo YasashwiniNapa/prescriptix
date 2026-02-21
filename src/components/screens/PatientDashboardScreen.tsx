@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import {
   User, Stethoscope, History, RotateCcw, Calendar,
   AlertTriangle, CheckCircle2, Activity, ChevronRight,
-  Pill, Heart, Phone, Mail, Shield
+  Pill, Heart, Phone, Mail, Shield, LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ interface PatientDashboardScreenProps {
   onNewScan: () => void;
   onHistory: () => void;
   onEditProfile: () => void;
+  onSignOut?: () => void;
 }
 
 const riskConfig = {
@@ -34,6 +35,7 @@ const PatientDashboardScreen = ({
   onNewScan,
   onHistory,
   onEditProfile,
+  onSignOut,
 }: PatientDashboardScreenProps) => {
   const risk = riskConfig[overallRisk];
   const RiskIcon = risk.icon;
@@ -71,6 +73,12 @@ const PatientDashboardScreen = ({
               <RotateCcw className="h-3.5 w-3.5" />
               New Scan
             </Button>
+            {onSignOut && (
+              <Button variant="ghost" size="sm" onClick={onSignOut} className="gap-1.5 text-muted-foreground">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            )}
           </div>
         </div>
       </nav>

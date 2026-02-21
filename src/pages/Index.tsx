@@ -1,7 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppStep, ScreeningResult, SymptomItem, HealthInsight, ScreeningSession, IntakeFormData, PatientProfile } from '@/lib/screening-types';
 import { resultToSymptoms, generateInsights, createSession } from '@/lib/mock-screening';
+import { loadProfile, saveProfile, getProfileId, saveSession, loadSessions } from '@/lib/db-helpers';
+import { useAuth } from '@/hooks/useAuth';
+import AuthScreen from '@/components/screens/AuthScreen';
 import WelcomeScreen from '@/components/screens/WelcomeScreen';
 import CameraScreen from '@/components/screens/CameraScreen';
 import VisualScreeningScreen from '@/components/screens/VisualScreeningScreen';
@@ -13,6 +16,7 @@ import DashboardScreen from '@/components/screens/DashboardScreen';
 import HistoryScreen from '@/components/screens/HistoryScreen';
 import ProfileSetupScreen from '@/components/screens/ProfileSetupScreen';
 import PatientDashboardScreen from '@/components/screens/PatientDashboardScreen';
+import { Loader2 } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, x: 40 },
@@ -21,7 +25,8 @@ const pageVariants = {
 };
 
 const Index = () => {
-  const [step, setStep] = useState<AppStep>('welcome');
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [step, setStep] = useState<AppStep | 'auth' | 'loading'>('loading');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [symptoms, setSymptoms] = useState<SymptomItem[]>([]);
   const [insights, setInsights] = useState<HealthInsight[]>([]);
@@ -30,6 +35,37 @@ const Index = () => {
   const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [profile, setProfile] = useState<PatientProfile | null>(null);
+
+  // On auth state change, load user data
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setStep('auth');
+      return;
+    }
+    // Load profile + sessions
+    const init = async () => {
+      setStep('loading');
+      try {
+        const [p, s] = await Promise.all([loadProfile(), loadSessions()]);
+        setProfile(p);
+        setSessions(s);
+        if (s.length > 0 && s[0]) {
+          setOverallRisk(s[0].overallRisk);
+          setInsights(s[0].insights);
+        }
+        // If has profile + sessions → dashboard, if has profile but no sessions → welcome for new scan, if no profile → welcome
+        if (p) {
+          setStep('patient-dashboard');
+        } else {
+          setStep('welcome');
+        }
+      } catch {
+        setStep('welcome');
+      }
+    };
+    init();
+  }, [user, authLoading]);
 
   const handleCameraReady = (mediaStream: MediaStream) => {
     setStream(mediaStream);
@@ -64,28 +100,84 @@ const Index = () => {
     setStep('processing');
   };
 
-  const handleProcessingComplete = useCallback(() => {
+  const handleProcessingComplete = useCallback(async () => {
     const ins = generateInsights(symptoms);
     setInsights(ins);
     const session = createSession(symptoms, ins);
     setOverallRisk(session.overallRisk);
-    setSessions(prev => [session, ...prev]);
-    // If no profile yet, go to profile setup; otherwise go to patient dashboard
-    if (!profile) {
-      setStep('profile-setup');
-    } else {
-      setStep('patient-dashboard');
-    }
-  }, [symptoms, profile]);
 
-  const handleProfileComplete = (newProfile: PatientProfile) => {
+    // Save to DB if user is logged in
+    if (user) {
+      try {
+        let profileId = await getProfileId();
+        if (profileId) {
+          await saveSession(profileId, symptoms, ins, session.overallRisk);
+          const updatedSessions = await loadSessions();
+          setSessions(updatedSessions);
+          setStep('patient-dashboard');
+        } else {
+          // Need profile first, save session after profile creation
+          setSessions(prev => [session, ...prev]);
+          setStep('profile-setup');
+        }
+      } catch {
+        setSessions(prev => [session, ...prev]);
+        if (!profile) {
+          setStep('profile-setup');
+        } else {
+          setStep('patient-dashboard');
+        }
+      }
+    } else {
+      setSessions(prev => [session, ...prev]);
+      if (!profile) {
+        setStep('profile-setup');
+      } else {
+        setStep('patient-dashboard');
+      }
+    }
+  }, [symptoms, profile, user]);
+
+  const handleProfileComplete = async (newProfile: PatientProfile) => {
     setProfile(newProfile);
+    if (user) {
+      try {
+        const profileId = await saveProfile(newProfile, user.id);
+        // If we have pending local sessions that aren't saved yet, save them
+        if (symptoms.length > 0) {
+          await saveSession(profileId, symptoms, insights, overallRisk);
+          const updatedSessions = await loadSessions();
+          setSessions(updatedSessions);
+        }
+      } catch (err) {
+        console.error('Failed to save profile:', err);
+      }
+    }
     setStep('patient-dashboard');
   };
 
   const handleNewScan = () => {
     setStep('welcome');
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setProfile(null);
+    setSessions([]);
+    setStep('auth');
+  };
+
+  if (step === 'loading' || authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center gradient-hero">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (step === 'auth') {
+    return <AuthScreen onAuth={() => {}} />;
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -109,7 +201,10 @@ const Index = () => {
         )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
         {step === 'profile-setup' && (
-          <ProfileSetupScreen onComplete={handleProfileComplete} />
+          <ProfileSetupScreen
+            prefillName={user?.user_metadata?.full_name}
+            onComplete={handleProfileComplete}
+          />
         )}
         {step === 'patient-dashboard' && profile && (
           <PatientDashboardScreen
@@ -120,6 +215,7 @@ const Index = () => {
             onNewScan={handleNewScan}
             onHistory={() => setStep('history')}
             onEditProfile={() => setStep('profile-setup')}
+            onSignOut={handleSignOut}
           />
         )}
         {step === 'dashboard' && (
