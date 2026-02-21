@@ -246,7 +246,7 @@ const Index = () => {
             overallRisk={overallRisk}
             onNewScan={handleNewScan}
             onHistory={() => setStep('history')}
-            onEditProfile={() => setStep('profile-setup')}
+            onEditProfile={() => setStep('edit-profile')}
             onAddProvider={() => setStep('add-provider')}
             onSignOut={handleSignOut}
           />
@@ -256,6 +256,24 @@ const Index = () => {
             currentProvider={profile?.provider}
             currentSpecialty={profile?.providerSpecialty}
             onSave={handleAddProviderSave}
+            onBack={() => setStep('patient-dashboard')}
+          />
+        )}
+        {step === 'edit-profile' && profile && (
+          <ProfileSetupScreen
+            editMode
+            existingProfile={profile}
+            onComplete={async (updatedProfile) => {
+              setProfile(updatedProfile);
+              if (user) {
+                try {
+                  await saveProfile(updatedProfile, user.id);
+                } catch (err) {
+                  console.error('Failed to update profile:', err);
+                }
+              }
+              setStep('patient-dashboard');
+            }}
             onBack={() => setStep('patient-dashboard')}
           />
         )}
