@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { PatientProfile, ScreeningSession, HealthInsight } from '@/lib/screening-types';
+import logo from '@/assets/logo.png';
 
 interface PatientDashboardScreenProps {
   profile: PatientProfile;
@@ -68,10 +69,8 @@ const PatientDashboardScreen = ({
       <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-              <Activity className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold font-display text-foreground">HealthScreen</span>
+            <img src={logo} alt="Prescriptix logo" className="h-8 w-8 rounded-lg shadow-sm" />
+            <span className="text-lg font-bold font-display text-foreground">Prescriptix</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={onHistory} className="gap-1.5 text-muted-foreground">
