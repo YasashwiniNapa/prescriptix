@@ -17,18 +17,27 @@ serve(async (req) => {
       throw new Error("AZURE_MAPS_KEY is not configured");
     }
 
-    const { lat, lon } = await req.json();
+    const { lat, lon, categoryFilter } = await req.json();
     if (typeof lat !== "number" || typeof lon !== "number") {
       throw new Error("lat and lon are required numbers");
     }
 
+    // Build query based on category filter
+    // categoryFilter: "emergency" | "clinic" | "all" (default)
+    let query = "hospital";
+    if (categoryFilter === "emergency") {
+      query = "emergency room hospital";
+    } else if (categoryFilter === "clinic") {
+      query = "clinic doctor";
+    }
+
     const url = new URL("https://atlas.microsoft.com/search/poi/json");
     url.searchParams.set("api-version", "1.0");
-    url.searchParams.set("query", "hospital");
+    url.searchParams.set("query", query);
     url.searchParams.set("lat", String(lat));
     url.searchParams.set("lon", String(lon));
-    url.searchParams.set("radius", "10000");
-    url.searchParams.set("limit", "15");
+    url.searchParams.set("radius", "15000");
+    url.searchParams.set("limit", "20");
     url.searchParams.set("subscription-key", apiKey);
 
     const response = await fetch(url.toString());

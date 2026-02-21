@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Phone, Navigation, Loader2, AlertCircle, Hospital } from 'lucide-react';
+import { MapPin, Phone, Navigation, Loader2, AlertCircle, Hospital, Shield, Stethoscope, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,12 +19,43 @@ interface NearbyHospital {
 interface NearbyHospitalsScreenProps {
   onContinue: () => void;
   onSkip: () => void;
+  overallRisk: 'low' | 'moderate' | 'high';
 }
 
-const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProps) => {
+const URGENCY_CONFIG = {
+  high: {
+    label: 'Urgent — Emergency Rooms',
+    description: 'Based on your screening results, we recommend visiting an emergency room or urgent care center.',
+    icon: Activity,
+    categoryFilter: 'emergency' as const,
+    badgeClass: 'bg-destructive/10 text-destructive border-destructive/20',
+    accentClass: 'text-destructive',
+  },
+  moderate: {
+    label: 'Follow-up — Clinics & Specialists',
+    description: 'Your results suggest scheduling a follow-up with a doctor or specialist clinic.',
+    icon: Stethoscope,
+    categoryFilter: 'all' as const,
+    badgeClass: 'bg-orange-100 text-orange-700 border-orange-200',
+    accentClass: 'text-orange-600',
+  },
+  low: {
+    label: 'Routine — General Practitioners',
+    description: 'No urgent concerns detected. Here are nearby clinics for a routine check-up if desired.',
+    icon: Shield,
+    categoryFilter: 'clinic' as const,
+    badgeClass: 'bg-primary/10 text-primary border-primary/20',
+    accentClass: 'text-primary',
+  },
+};
+
+const NearbyHospitalsScreen = ({ onContinue, onSkip, overallRisk }: NearbyHospitalsScreenProps) => {
   const [hospitals, setHospitals] = useState<NearbyHospital[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const config = URGENCY_CONFIG[overallRisk];
+  const UrgencyIcon = config.icon;
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -38,24 +69,44 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
         const { latitude: lat, longitude: lon } = position.coords;
         try {
           const { data, error: fnError } = await supabase.functions.invoke('nearby-hospitals', {
-            body: { lat, lon },
+            body: { lat, lon, categoryFilter: config.categoryFilter },
           });
           if (fnError) throw fnError;
-          setHospitals(data.results || []);
+
+          let results: NearbyHospital[] = data.results || [];
+
+          // Client-side filtering by category tags based on risk
+          if (overallRisk === 'high') {
+            // Prioritize results with emergency/urgent/hospital categories
+            results = results.sort((a, b) => {
+              const aScore = a.categories.some(c => /emergency|urgent/i.test(c)) ? 0 : 1;
+              const bScore = b.categories.some(c => /emergency|urgent/i.test(c)) ? 0 : 1;
+              return aScore - bScore;
+            });
+          } else if (overallRisk === 'low') {
+            // Prioritize clinics, doctors, general practitioners
+            results = results.sort((a, b) => {
+              const aScore = a.categories.some(c => /clinic|doctor|physician|general/i.test(c)) ? 0 : 1;
+              const bScore = b.categories.some(c => /clinic|doctor|physician|general/i.test(c)) ? 0 : 1;
+              return aScore - bScore;
+            });
+          }
+
+          setHospitals(results);
         } catch (e: any) {
           console.error('Failed to fetch hospitals:', e);
-          setError('Could not find nearby hospitals. Please try again later.');
+          setError('Could not find nearby facilities. Please try again later.');
         } finally {
           setLoading(false);
         }
       },
       () => {
-        setError('Location access denied. Please enable location services to find nearby hospitals.');
+        setError('Location access denied. Please enable location services.');
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, []);
+  }, [config.categoryFilter, overallRisk]);
 
   const formatDistance = (meters: number | null) => {
     if (meters === null) return '';
@@ -63,11 +114,11 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
     return `${(meters / 1000).toFixed(1)}km`;
   };
 
-  const getCategoryColor = (cat: string) => {
+  const getCategoryBadge = (cat: string) => {
     const lower = cat.toLowerCase();
-    if (lower.includes('hospital')) return 'bg-destructive/10 text-destructive border-destructive/20';
-    if (lower.includes('urgent')) return 'bg-orange-100 text-orange-700 border-orange-200';
-    if (lower.includes('clinic')) return 'bg-primary/10 text-primary border-primary/20';
+    if (/emergency|urgent/.test(lower)) return 'bg-destructive/10 text-destructive border-destructive/20';
+    if (/hospital/.test(lower)) return 'bg-orange-100 text-orange-700 border-orange-200';
+    if (/clinic|doctor|physician/.test(lower)) return 'bg-primary/10 text-primary border-primary/20';
     return 'bg-secondary text-secondary-foreground border-border';
   };
 
@@ -78,19 +129,30 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl"
       >
+        {/* Severity banner */}
+        <Card className={`mb-6 border ${config.badgeClass}`}>
+          <CardContent className="flex items-start gap-3 p-4">
+            <UrgencyIcon className={`h-6 w-6 shrink-0 mt-0.5 ${config.accentClass}`} />
+            <div>
+              <h3 className={`font-semibold font-display ${config.accentClass}`}>{config.label}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{config.description}</p>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="mb-2 flex items-center gap-2">
           <Hospital className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium text-primary">Nearby Healthcare</span>
+          <span className="text-sm font-medium text-primary">Recommended Facilities</span>
         </div>
-        <h2 className="mb-2 text-2xl font-bold font-display text-foreground">Hospitals Near You</h2>
-        <p className="mb-6 text-muted-foreground">
-          Based on your location, here are nearby healthcare facilities.
+        <h2 className="mb-2 text-2xl font-bold font-display text-foreground">Nearby Healthcare</h2>
+        <p className="mb-6 text-muted-foreground text-sm">
+          Facilities sorted by relevance to your screening results.
         </p>
 
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Finding nearby hospitals…</p>
+            <p className="text-sm text-muted-foreground">Finding nearby facilities…</p>
           </div>
         )}
 
@@ -106,7 +168,6 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
 
         {!loading && !error && (
           <>
-            {/* Hospital list */}
             <div className="mb-6 space-y-3">
               {hospitals.map((hospital, i) => (
                 <motion.div
@@ -129,7 +190,9 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
                           {hospital.phone && (
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Phone className="h-3 w-3 shrink-0" />
-                              <span>{hospital.phone}</span>
+                              <a href={`tel:${hospital.phone}`} className="hover:text-primary transition-colors">
+                                {hospital.phone}
+                              </a>
                             </div>
                           )}
                           {hospital.categories.length > 0 && (
@@ -138,7 +201,7 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
                                 <Badge
                                   key={cat}
                                   variant="outline"
-                                  className={`text-[10px] px-1.5 py-0 ${getCategoryColor(cat)}`}
+                                  className={`text-[10px] px-1.5 py-0 ${getCategoryBadge(cat)}`}
                                 >
                                   {cat}
                                 </Badge>
@@ -159,10 +222,14 @@ const NearbyHospitalsScreen = ({ onContinue, onSkip }: NearbyHospitalsScreenProp
               ))}
               {hospitals.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">
-                  No hospitals found nearby.
+                  No facilities found nearby.
                 </p>
               )}
             </div>
+
+            <p className="mb-4 text-center text-xs text-muted-foreground italic">
+              This tool provides asymmetry risk screening only and is not a medical diagnosis.
+            </p>
 
             <Button
               onClick={onContinue}
