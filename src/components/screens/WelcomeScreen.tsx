@@ -11,21 +11,11 @@ interface WelcomeScreenProps {
 const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-hero">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        className="max-w-md text-center"
-      >
+      <div className="max-w-md mx-auto text-center">
         {/* Logo */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-          className="mx-auto mb-8"
-        >
+        <div className="flex justify-center mb-8">
           <img src={logo} alt="Prescriptix logo" className="h-24 w-24 rounded-2xl shadow-elevated" />
-        </motion.div>
+        </div>
 
         <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground font-display">
           Prescriptix
@@ -61,12 +51,7 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
         </div>
 
         {/* Features */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-10 grid grid-cols-3 gap-4 text-center"
-        >
+        <div className="mt-10 grid grid-cols-3 gap-4 text-center">
           {[
             { icon: Eye, label: 'AI-Powered' },
             { icon: Shield, label: 'Private' },
@@ -79,7 +64,7 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
               <span className="text-xs text-muted-foreground">{label}</span>
             </div>
           ))}
-        </motion.div>
+        </div>
 
         {/* Privacy + Disclaimer */}
         <div className="mt-8 space-y-1">
@@ -91,7 +76,7 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
             This tool provides asymmetry risk screening only — not a medical diagnosis.
           </p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
