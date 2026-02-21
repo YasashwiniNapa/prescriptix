@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AppStep, ScreeningResult, SymptomItem, HealthInsight, ScreeningSession, IntakeFormData } from '@/lib/screening-types';
+import { AppStep, ScreeningResult, SymptomItem, HealthInsight, ScreeningSession, IntakeFormData, PatientProfile } from '@/lib/screening-types';
 import { resultToSymptoms, generateInsights, createSession } from '@/lib/mock-screening';
 import WelcomeScreen from '@/components/screens/WelcomeScreen';
 import CameraScreen from '@/components/screens/CameraScreen';
@@ -11,6 +11,8 @@ import IntakeFormScreen from '@/components/screens/IntakeFormScreen';
 import ProcessingScreen from '@/components/screens/ProcessingScreen';
 import DashboardScreen from '@/components/screens/DashboardScreen';
 import HistoryScreen from '@/components/screens/HistoryScreen';
+import ProfileSetupScreen from '@/components/screens/ProfileSetupScreen';
+import PatientDashboardScreen from '@/components/screens/PatientDashboardScreen';
 
 const pageVariants = {
   initial: { opacity: 0, x: 40 },
@@ -27,6 +29,7 @@ const Index = () => {
   const [sessions, setSessions] = useState<ScreeningSession[]>([]);
   const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
   const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [profile, setProfile] = useState<PatientProfile | null>(null);
 
   const handleCameraReady = (mediaStream: MediaStream) => {
     setStream(mediaStream);
@@ -67,8 +70,18 @@ const Index = () => {
     const session = createSession(symptoms, ins);
     setOverallRisk(session.overallRisk);
     setSessions(prev => [session, ...prev]);
-    setStep('dashboard');
-  }, [symptoms]);
+    // If no profile yet, go to profile setup; otherwise go to patient dashboard
+    if (!profile) {
+      setStep('profile-setup');
+    } else {
+      setStep('patient-dashboard');
+    }
+  }, [symptoms, profile]);
+
+  const handleProfileComplete = (newProfile: PatientProfile) => {
+    setProfile(newProfile);
+    setStep('patient-dashboard');
+  };
 
   const handleNewScan = () => {
     setStep('welcome');
@@ -95,6 +108,20 @@ const Index = () => {
           />
         )}
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
+        {step === 'profile-setup' && (
+          <ProfileSetupScreen onComplete={handleProfileComplete} />
+        )}
+        {step === 'patient-dashboard' && profile && (
+          <PatientDashboardScreen
+            profile={profile}
+            sessions={sessions}
+            insights={insights}
+            overallRisk={overallRisk}
+            onNewScan={handleNewScan}
+            onHistory={() => setStep('history')}
+            onEditProfile={() => setStep('profile-setup')}
+          />
+        )}
         {step === 'dashboard' && (
           <DashboardScreen
             insights={insights}
@@ -103,7 +130,12 @@ const Index = () => {
             onNewScan={handleNewScan}
           />
         )}
-        {step === 'history' && <HistoryScreen sessions={sessions} onBack={() => setStep('dashboard')} />}
+        {step === 'history' && (
+          <HistoryScreen
+            sessions={sessions}
+            onBack={() => setStep(profile ? 'patient-dashboard' : 'dashboard')}
+          />
+        )}
       </motion.div>
     </AnimatePresence>
   );
