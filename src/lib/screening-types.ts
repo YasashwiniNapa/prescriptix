@@ -9,6 +9,15 @@ export interface ScreeningResult {
   eyelidOpeningLeft: number;
   eyelidOpeningRight: number;
   swellingDetected: boolean;
+  /** CIE L*a*b* b-channel yellowness score (0 = neutral, higher = yellow) */
+  scleraYellowness?: number;
+  /** Blue chromaticity B/(R+G+B) — lower means more yellow */
+  blueChromaticity?: number;
+  /** Whether clinical yellowness threshold was exceeded */
+  yellownessDetected?: boolean;
+  /** Left vs right eye yellowness */
+  leftEyeYellowness?: number;
+  rightEyeYellowness?: number;
 }
 
 export interface SymptomItem {
