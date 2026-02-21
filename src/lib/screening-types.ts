@@ -4,6 +4,11 @@ export interface ScreeningResult {
   feverRisk: number;
   asymmetryScore: number;
   blinkRate: number;
+  earLeft: number;
+  earRight: number;
+  eyelidOpeningLeft: number;
+  eyelidOpeningRight: number;
+  swellingDetected: boolean;
 }
 
 export interface SymptomItem {
@@ -18,6 +23,7 @@ export interface IntakeFormData {
   duration: string;
   severity: number;
   notes: string;
+  voiceTranscript?: string;
 }
 
 export interface HealthInsight {
@@ -40,6 +46,7 @@ export type AppStep =
   | 'camera'
   | 'screening'
   | 'results'
+  | 'voice-input'
   | 'intake'
   | 'processing'
   | 'dashboard'
