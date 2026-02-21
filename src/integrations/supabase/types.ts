@@ -14,13 +14,165 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          allergies: string | null
+          conditions: string[] | null
+          created_at: string
+          dob: string | null
+          email: string | null
+          gender: string | null
+          id: string
+          medications: string | null
+          name: string
+          phone: string | null
+          provider: string | null
+          provider_specialty: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string | null
+          conditions?: string[] | null
+          created_at?: string
+          dob?: string | null
+          email?: string | null
+          gender?: string | null
+          id?: string
+          medications?: string | null
+          name?: string
+          phone?: string | null
+          provider?: string | null
+          provider_specialty?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string | null
+          conditions?: string[] | null
+          created_at?: string
+          dob?: string | null
+          email?: string | null
+          gender?: string | null
+          id?: string
+          medications?: string | null
+          name?: string
+          phone?: string | null
+          provider?: string | null
+          provider_specialty?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      screening_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          overall_risk: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          overall_risk?: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          overall_risk?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_insights: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          level: string
+          screening_session_id: string
+          suggestion: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string
+          id?: string
+          level?: string
+          screening_session_id: string
+          suggestion?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          level?: string
+          screening_session_id?: string
+          suggestion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_insights_screening_session_id_fkey"
+            columns: ["screening_session_id"]
+            isOneToOne: false
+            referencedRelation: "screening_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_symptoms: {
+        Row: {
+          checked: boolean
+          created_at: string
+          id: string
+          label: string
+          screening_session_id: string
+          source: string
+        }
+        Insert: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          screening_session_id: string
+          source?: string
+        }
+        Update: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          screening_session_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_symptoms_screening_session_id_fkey"
+            columns: ["screening_session_id"]
+            isOneToOne: false
+            referencedRelation: "screening_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_profile_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
