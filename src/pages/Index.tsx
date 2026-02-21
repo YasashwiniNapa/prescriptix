@@ -35,6 +35,7 @@ const Index = () => {
   const [screeningResult, setScreeningResult] = useState<ScreeningResult | null>(null);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [profile, setProfile] = useState<PatientProfile | null>(null);
+  const [intakeData, setIntakeData] = useState<IntakeFormData | null>(null);
 
   // On auth state change, load user data
   useEffect(() => {
@@ -96,7 +97,8 @@ const Index = () => {
     setStep('intake');
   };
 
-  const handleIntakeSubmit = (_data: IntakeFormData) => {
+  const handleIntakeSubmit = (data: IntakeFormData) => {
+    setIntakeData(data);
     setStep('processing');
   };
 
@@ -202,8 +204,13 @@ const Index = () => {
         {step === 'processing' && <ProcessingScreen onComplete={handleProcessingComplete} />}
         {step === 'profile-setup' && (
         <ProfileSetupScreen
-            prefillName={user?.user_metadata?.full_name}
+            prefillName={intakeData?.patientName || user?.user_metadata?.full_name}
             prefillEmail={user?.email}
+            prefillDob={intakeData?.patientDob}
+            prefillGender={intakeData?.patientGender}
+            prefillAllergies={intakeData?.patientAllergies}
+            prefillMedications={intakeData?.patientMedications}
+            prefillConditions={intakeData?.patientConditions}
             onComplete={handleProfileComplete}
           />
         )}

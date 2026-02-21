@@ -24,6 +24,12 @@ export interface IntakeFormData {
   severity: number;
   notes: string;
   voiceTranscript?: string;
+  patientName?: string;
+  patientDob?: string;
+  patientGender?: string;
+  patientAllergies?: string;
+  patientMedications?: string;
+  patientConditions?: string[];
 }
 
 export interface HealthInsight {

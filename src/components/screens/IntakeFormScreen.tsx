@@ -69,7 +69,15 @@ const IntakeFormScreen = ({ symptoms, screeningResult, voiceTranscript, onSubmit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    onSubmit({
+      ...form,
+      patientName: patientInfo.name,
+      patientDob: patientInfo.dob,
+      patientGender: patientInfo.gender,
+      patientAllergies: patientInfo.allergies,
+      patientMedications: patientInfo.medications,
+      patientConditions: patientInfo.conditions,
+    });
   };
 
   return (
