@@ -1,0 +1,78 @@
+import { motion } from 'framer-motion';
+import { Shield, Eye, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface WelcomeScreenProps {
+  onStart: () => void;
+}
+
+const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-hero">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        className="max-w-md text-center"
+      >
+        {/* Logo */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+          className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl gradient-primary shadow-elevated"
+        >
+          <Eye className="h-10 w-10 text-primary-foreground" />
+        </motion.div>
+
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground font-display">
+          HealthScan
+        </h1>
+        <p className="mb-2 text-lg font-medium text-foreground/80 font-display">
+          Visual Health Prescreening
+        </p>
+        <p className="mb-10 text-muted-foreground leading-relaxed">
+          We'll perform a quick visual health screening to personalize your checkup. It only takes a moment.
+        </p>
+
+        <Button
+          onClick={onStart}
+          size="lg"
+          className="w-full gap-2 rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
+        >
+          <Sparkles className="h-5 w-5" />
+          Start Check
+        </Button>
+
+        {/* Features */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-10 grid grid-cols-3 gap-4 text-center"
+        >
+          {[
+            { icon: Eye, label: 'AI-Powered' },
+            { icon: Shield, label: 'Private' },
+            { icon: Sparkles, label: 'Instant' },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex flex-col items-center gap-1.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                <Icon className="h-4 w-4 text-secondary-foreground" />
+              </div>
+              <span className="text-xs text-muted-foreground">{label}</span>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Privacy */}
+        <p className="mt-8 text-xs text-muted-foreground/70">
+          <Shield className="mr-1 inline h-3 w-3" />
+          Your data is processed locally and never stored without consent.
+        </p>
+      </motion.div>
+    </div>
+  );
+};
+
+export default WelcomeScreen;
