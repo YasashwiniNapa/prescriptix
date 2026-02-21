@@ -11,6 +11,7 @@ import VisualScreeningScreen from '@/components/screens/VisualScreeningScreen';
 import ResultsScreen from '@/components/screens/ResultsScreen';
 import NearbyHospitalsScreen from '@/components/screens/NearbyHospitalsScreen';
 import VoiceInputScreen from '@/components/screens/VoiceInputScreen';
+import VideoUploadScanScreen from '@/components/screens/VideoUploadScanScreen';
 import IntakeFormScreen from '@/components/screens/IntakeFormScreen';
 import ProcessingScreen from '@/components/screens/ProcessingScreen';
 import DashboardScreen from '@/components/screens/DashboardScreen';
@@ -185,7 +186,8 @@ const Index = () => {
   return (
     <AnimatePresence mode="wait">
       <motion.div key={step} variants={pageVariants} initial="initial" animate="animate" exit="exit">
-        {step === 'welcome' && <WelcomeScreen onStart={() => setStep('camera')} />}
+        {step === 'welcome' && <WelcomeScreen onStart={() => setStep('camera')} onVideoUpload={() => setStep('video-upload')} />}
+        {step === 'video-upload' && <VideoUploadScanScreen onBack={() => setStep('welcome')} />}
         {step === 'camera' && <CameraScreen onCameraReady={handleCameraReady} />}
         {step === 'screening' && stream && (
           <VisualScreeningScreen stream={stream} onComplete={handleScreeningComplete} />
