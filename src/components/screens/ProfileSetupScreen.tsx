@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Stethoscope, Heart, ChevronRight } from 'lucide-react';
+import { User, Stethoscope, Heart, ChevronRight, MapPin, Loader2, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PatientProfile } from '@/lib/screening-types';
+import { supabase } from '@/integrations/supabase/client';
+
+interface NearbyProvider {
+  name: string;
+  address: string;
+  categories: string[];
+  distance: number | null;
+}
 
 interface ProfileSetupScreenProps {
   prefillName?: string;
@@ -18,6 +26,162 @@ interface ProfileSetupScreenProps {
   prefillConditions?: string[];
   onComplete: (profile: PatientProfile) => void;
 }
+
+/* ── Provider Step with nearby hospitals ── */
+interface ProviderStepProps {
+  profile: PatientProfile;
+  update: (field: keyof PatientProfile, value: string) => void;
+  onBack: () => void;
+  onComplete: () => void;
+}
+
+const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps) => {
+  const [nearbyProviders, setNearbyProviders] = useState<NearbyProvider[]>([]);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [useCustom, setUseCustom] = useState(false);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLoadingProviders(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { data, error } = await supabase.functions.invoke('nearby-hospitals', {
+            body: { lat: pos.coords.latitude, lon: pos.coords.longitude },
+          });
+          if (!error && data?.results) setNearbyProviders(data.results);
+        } catch { /* ignore */ }
+        setLoadingProviders(false);
+      },
+      () => setLoadingProviders(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const selectProvider = (idx: number) => {
+    const p = nearbyProviders[idx];
+    setSelectedIdx(idx);
+    setUseCustom(false);
+    update('provider', p.name);
+    const cat = p.categories?.[0] || '';
+    update('providerSpecialty', cat);
+  };
+
+  const switchToCustom = () => {
+    setSelectedIdx(null);
+    setUseCustom(true);
+    update('provider', '');
+    update('providerSpecialty', '');
+  };
+
+  const formatDist = (m: number | null) => {
+    if (m === null) return '';
+    return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
+  };
+
+  return (
+    <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Stethoscope className="h-4 w-4 text-primary" />
+            Choose a Provider
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Nearby providers list */}
+          {loadingProviders ? (
+            <div className="flex items-center justify-center gap-2 py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Finding nearby providers…</span>
+            </div>
+          ) : nearbyProviders.length > 0 && !useCustom ? (
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {nearbyProviders.map((p, i) => (
+                <button
+                  key={`${p.name}-${i}`}
+                  type="button"
+                  onClick={() => selectProvider(i)}
+                  className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                    selectedIdx === i
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                      : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm text-foreground truncate">{p.name}</p>
+                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{p.address}</span>
+                      </div>
+                      {p.categories.length > 0 && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">{p.categories.slice(0, 2).join(' · ')}</p>
+                      )}
+                    </div>
+                    {p.distance !== null && (
+                      <span className="text-xs font-medium text-primary shrink-0">{formatDist(p.distance)}</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {/* Custom toggle or custom inputs */}
+          {!loadingProviders && (
+            <>
+              {!useCustom && nearbyProviders.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={switchToCustom} className="gap-1.5 text-primary w-full">
+                  <PenLine className="h-3.5 w-3.5" />
+                  Enter provider manually instead
+                </Button>
+              )}
+              {(useCustom || nearbyProviders.length === 0) && (
+                <div className="space-y-4">
+                  {nearbyProviders.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={() => { setUseCustom(false); }} className="gap-1.5 text-primary w-full">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Choose from nearby providers
+                    </Button>
+                  )}
+                  <div>
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Provider / Doctor Name</Label>
+                    <Input value={profile.provider} onChange={e => update('provider', e.target.value)} placeholder="Dr. Smith" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
+                    <Input value={profile.providerSpecialty} onChange={e => update('providerSpecialty', e.target.value)} placeholder="e.g., Family Medicine" className="mt-1" />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Allergies & Medications always visible */}
+          <div>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Known Allergies</Label>
+            <Input value={profile.allergies} onChange={e => update('allergies', e.target.value)} placeholder="e.g., Penicillin, Peanuts, None" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Current Medications</Label>
+            <Input value={profile.medications} onChange={e => update('medications', e.target.value)} placeholder="e.g., Metformin 500mg" className="mt-1" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="mt-6 flex gap-3">
+        <Button variant="outline" onClick={onBack} size="lg" className="flex-1 rounded-xl py-6">Back</Button>
+        <Button onClick={onComplete} size="lg" className="flex-1 rounded-xl py-6 gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity">
+          Complete Profile
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
 
 const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, prefillAllergies, prefillMedications, prefillConditions, onComplete }: ProfileSetupScreenProps) => {
   const [profile, setProfile] = useState<PatientProfile>({
@@ -153,76 +317,12 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
         )}
 
         {step === 2 && (
-          <motion.div
-            key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Stethoscope className="h-4 w-4 text-primary" />
-                  Provider Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Provider / Doctor Name</Label>
-                  <Input
-                    value={profile.provider}
-                    onChange={e => update('provider', e.target.value)}
-                    placeholder="Dr. Smith"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Specialty</Label>
-                  <Input
-                    value={profile.providerSpecialty}
-                    onChange={e => update('providerSpecialty', e.target.value)}
-                    placeholder="e.g., Family Medicine, Internal Medicine"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Known Allergies</Label>
-                  <Input
-                    value={profile.allergies}
-                    onChange={e => update('allergies', e.target.value)}
-                    placeholder="e.g., Penicillin, Peanuts, None"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Current Medications</Label>
-                  <Input
-                    value={profile.medications}
-                    onChange={e => update('medications', e.target.value)}
-                    placeholder="e.g., Metformin 500mg"
-                    className="mt-1"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="mt-6 flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setStep(1)}
-                size="lg"
-                className="flex-1 rounded-xl py-6"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={() => onComplete(profile)}
-                size="lg"
-                className="flex-1 rounded-xl py-6 gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
-              >
-                Complete Profile
-              </Button>
-            </div>
-          </motion.div>
+          <ProviderStep
+            profile={profile}
+            update={update}
+            onBack={() => setStep(1)}
+            onComplete={() => onComplete(profile)}
+          />
         )}
       </motion.div>
     </div>
