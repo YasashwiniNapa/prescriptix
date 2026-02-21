@@ -12,6 +12,7 @@ export async function loadProfile(): Promise<PatientProfile | null> {
     phone: data.phone || '',
     provider: data.provider || '',
     providerSpecialty: data.provider_specialty || '',
+    providerLocation: (data as any).provider_location || '',
     allergies: data.allergies || '',
     medications: data.medications || '',
     conditions: data.conditions || [],
@@ -19,7 +20,7 @@ export async function loadProfile(): Promise<PatientProfile | null> {
 }
 
 export async function saveProfile(profile: PatientProfile, userId: string): Promise<string> {
-  const row = {
+  const row: any = {
     user_id: userId,
     name: profile.name,
     dob: profile.dob,
@@ -28,6 +29,7 @@ export async function saveProfile(profile: PatientProfile, userId: string): Prom
     phone: profile.phone,
     provider: profile.provider,
     provider_specialty: profile.providerSpecialty,
+    provider_location: profile.providerLocation,
     allergies: profile.allergies,
     medications: profile.medications,
     conditions: profile.conditions,

@@ -18,17 +18,19 @@ interface NearbyProvider {
 interface AddProviderScreenProps {
   currentProvider?: string;
   currentSpecialty?: string;
-  onSave: (provider: string, specialty: string) => void;
+  currentLocation?: string;
+  onSave: (provider: string, specialty: string, location: string) => void;
   onBack: () => void;
 }
 
-const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }: AddProviderScreenProps) => {
+const AddProviderScreen = ({ currentProvider, currentSpecialty, currentLocation, onSave, onBack }: AddProviderScreenProps) => {
   const [nearbyProviders, setNearbyProviders] = useState<NearbyProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [useCustom, setUseCustom] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [provider, setProvider] = useState(currentProvider || '');
   const [specialty, setSpecialty] = useState(currentSpecialty || '');
+  const [location, setLocation] = useState(currentLocation || '');
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -54,8 +56,8 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
     const p = nearbyProviders[idx];
     setSelectedIdx(idx);
     setUseCustom(false);
-    // Only set the specialty/location from the list — doctor name stays manual
     setSpecialty(p.categories?.[0] || '');
+    setLocation(p.name);
   };
 
   const switchToCustom = () => {
@@ -195,7 +197,7 @@ const AddProviderScreen = ({ currentProvider, currentSpecialty, onSave, onBack }
         </Card>
 
         <Button
-          onClick={() => onSave(provider, specialty)}
+          onClick={() => onSave(provider, specialty, location)}
           disabled={!canSave}
           size="lg"
           className="w-full rounded-xl py-6 text-base font-semibold gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity disabled:opacity-50"

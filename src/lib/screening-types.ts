@@ -55,6 +55,7 @@ export interface PatientProfile {
   phone: string;
   provider: string;
   providerSpecialty: string;
+  providerLocation: string;
   allergies: string;
   medications: string;
   conditions: string[];
