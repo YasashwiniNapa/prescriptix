@@ -24,7 +24,10 @@ interface ProfileSetupScreenProps {
   prefillAllergies?: string;
   prefillMedications?: string;
   prefillConditions?: string[];
+  editMode?: boolean;
+  existingProfile?: PatientProfile;
   onComplete: (profile: PatientProfile) => void;
+  onBack?: () => void;
 }
 
 /* ── Provider Step with nearby hospitals ── */
@@ -183,19 +186,23 @@ const ProviderStep = ({ profile, update, onBack, onComplete }: ProviderStepProps
   );
 };
 
-const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, prefillAllergies, prefillMedications, prefillConditions, onComplete }: ProfileSetupScreenProps) => {
-  const [profile, setProfile] = useState<PatientProfile>({
-    name: prefillName || '',
-    dob: prefillDob || '',
-    gender: prefillGender || '',
-    email: prefillEmail || '',
-    phone: '',
-    provider: '',
-    providerSpecialty: '',
-    allergies: prefillAllergies || '',
-    medications: prefillMedications || '',
-    conditions: prefillConditions || [],
-  });
+const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEmail, prefillAllergies, prefillMedications, prefillConditions, editMode, existingProfile, onComplete, onBack }: ProfileSetupScreenProps) => {
+  const [profile, setProfile] = useState<PatientProfile>(
+    existingProfile
+      ? { ...existingProfile }
+      : {
+          name: prefillName || '',
+          dob: prefillDob || '',
+          gender: prefillGender || '',
+          email: prefillEmail || '',
+          phone: '',
+          provider: '',
+          providerSpecialty: '',
+          allergies: prefillAllergies || '',
+          medications: prefillMedications || '',
+          conditions: prefillConditions || [],
+        }
+  );
 
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -215,21 +222,27 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-elevated">
             <User className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Create Your Profile</h1>
+          <h1 className="text-2xl font-bold font-display text-foreground">
+            {editMode ? 'Edit Your Profile' : 'Create Your Profile'}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {step === 1 ? 'Let\'s get your basic info set up.' : 'Add your provider details.'}
+            {editMode
+              ? 'Update your information below.'
+              : step === 1 ? 'Let\'s get your basic info set up.' : 'Add your provider details.'}
           </p>
           {/* Step indicator */}
-          <div className="mt-4 flex justify-center gap-2">
-            {[1, 2].map(s => (
-              <div
-                key={s}
-                className={`h-1.5 w-10 rounded-full transition-colors ${
-                  s <= step ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
+          {!editMode && (
+            <div className="mt-4 flex justify-center gap-2">
+              {[1, 2].map(s => (
+                <div
+                  key={s}
+                  className={`h-1.5 w-10 rounded-full transition-colors ${
+                    s <= step ? 'bg-primary' : 'bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {step === 1 && (
@@ -304,15 +317,33 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
               </CardContent>
             </Card>
 
-            <Button
-              onClick={() => setStep(2)}
-              disabled={!canProceed}
-              size="lg"
-              className="mt-6 w-full gap-2 rounded-xl py-6 gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
-            >
-              Continue
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <div className="mt-6 flex gap-3">
+              {editMode && onBack && (
+                <Button variant="outline" onClick={onBack} size="lg" className="flex-1 rounded-xl py-6">
+                  Cancel
+                </Button>
+              )}
+              {editMode ? (
+                <Button
+                  onClick={() => onComplete(profile)}
+                  disabled={!canProceed}
+                  size="lg"
+                  className="flex-1 rounded-xl py-6 gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
+                >
+                  Save Changes
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!canProceed}
+                  size="lg"
+                  className="flex-1 rounded-xl py-6 gap-2 gradient-primary border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
+                >
+                  Continue
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </motion.div>
         )}
 
