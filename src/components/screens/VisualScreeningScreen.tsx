@@ -45,6 +45,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
   const [blinkCount, setBlinkCount] = useState(0);
   const featureHistoryRef = useRef<SymmetryFeatures[]>([]);
   const prevEarRef = useRef<number>(0.3);
+  const blinkCountRef = useRef(0);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -94,7 +95,8 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             // Blink detection (EAR drop below threshold)
             const avgEar = (features.earLeft + features.earRight) / 2;
             if (prevEarRef.current > 0.2 && avgEar < 0.18) {
-              setBlinkCount(prev => prev + 1);
+              blinkCountRef.current += 1;
+              setBlinkCount(blinkCountRef.current);
             }
             prevEarRef.current = avgEar;
           }
@@ -173,7 +175,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             fatigueScore: Math.min(1, agg.mean.compositeScore * 1.5),
             feverRisk: 0, // No thermal data
             asymmetryScore: agg.mean.compositeScore,
-            blinkRate: blinkCount,
+            blinkRate: blinkCountRef.current,
             earLeft: agg.mean.earLeft,
             earRight: agg.mean.earRight,
             eyelidOpeningLeft: agg.mean.earLeft * 12,
@@ -189,7 +191,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
             fatigueScore: parseFloat((0.4 + Math.random() * 0.5).toFixed(2)),
             feverRisk: 0,
             asymmetryScore: parseFloat(Math.abs(earL - earR).toFixed(3)),
-            blinkRate: blinkCount || Math.floor(10 + Math.random() * 15),
+            blinkRate: blinkCountRef.current || Math.floor(10 + Math.random() * 15),
             earLeft: earL,
             earRight: earR,
             eyelidOpeningLeft: parseFloat((2.5 + Math.random() * 3).toFixed(1)),
@@ -203,7 +205,7 @@ const VisualScreeningScreen = ({ stream, onComplete }: VisualScreeningScreenProp
     }, 50);
 
     return () => clearInterval(interval);
-  }, [onCompleteRef, blinkCount]);
+  }, [onCompleteRef]);
 
   const allPhaseKeys: Phase[] = ['detect', 'landmarks', 'ear', 'blink', 'movement', 'symmetry', 'final'];
   const phaseLabels: Record<Phase, string> = {
