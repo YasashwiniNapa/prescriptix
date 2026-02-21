@@ -1,73 +1,71 @@
-# Welcome to your Lovable project
+# health screening ai
 
-## Project info
+ai-powered health screening app using facial analysis, voice input, and real-time symptom detection.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## tech stack
 
-## How can I edit this code?
+- react + typescript + vite
+- supabase (auth, database, edge functions)
+- mediapipe (facial landmark detection)
+- azure openai (whisper transcription, advisory agent)
+- tailwind css + shadcn-ui
 
-There are several ways of editing your application.
+## prerequisites
 
-**Use Lovable**
+- node.js (v18+) - [install with nvm](https://github.com/nvm-sh/nvm)
+- docker desktop (for local supabase) - [install here](https://docs.docker.com/desktop)
+- supabase cli - installed via homebrew
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## how to run
 
-Changes made via Lovable will be committed automatically to this repo.
+### 1. install dependencies
 
-**Use your preferred IDE**
+```bash
+npm install
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 2. start the frontend
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+this starts the vite dev server at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. run supabase locally (optional)
 
-**Use GitHub Codespaces**
+if you want to test edge functions locally:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# make sure docker desktop is running first
+supabase start
 
-## What technologies are used for this project?
+# in another terminal, serve the edge functions
+supabase functions serve --env-file ./supabase/.env.local
+```
 
-This project is built with:
+edge functions will be available at `http://localhost:54321/functions/v1/`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 4. test an edge function (example)
 
-## How can I deploy this project?
+```bash
+curl -i --location --request POST 'http://localhost:54321/functions/v1/nearby-hospitals' \
+  --header 'Content-Type: application/json' \
+  --data '{"lat":37.7749,"lon":-122.4194,"categoryFilter":"all"}'
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## project structure
 
-## Can I connect a custom domain to my Lovable project?
+- `/src/components/screens/` - main ui screens (auth, camera, visual screening, etc.)
+- `/src/lib/` - core logic (landmark detection, sclera analysis, feature engineering, risk scoring)
+- `/supabase/functions/` - edge functions (transcribe, analyze-insights, nearby-hospitals)
+- `/supabase/migrations/` - database schema
 
-Yes, you can!
+## features
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- facial landmark detection (468 points via mediapipe)
+- sclera analysis for jaundice detection
+- voice-to-text symptom capture (azure whisper)
+- ai-powered health advisory (azure openai agent)
+- nearby hospital/clinic search (azure maps)
+- real-time risk scoring and symmetry analysis
