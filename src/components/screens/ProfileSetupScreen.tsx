@@ -198,6 +198,7 @@ const ProfileSetupScreen = ({ prefillName, prefillDob, prefillGender, prefillEma
           phone: '',
           provider: '',
           providerSpecialty: '',
+          providerLocation: '',
           allergies: prefillAllergies || '',
           medications: prefillMedications || '',
           conditions: prefillConditions || [],

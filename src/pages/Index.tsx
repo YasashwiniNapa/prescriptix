@@ -159,9 +159,9 @@ const Index = () => {
     setStep('patient-dashboard');
   };
 
-  const handleAddProviderSave = async (providerName: string, providerSpecialty: string) => {
+  const handleAddProviderSave = async (providerName: string, providerSpecialty: string, providerLocation: string) => {
     if (profile) {
-      const updatedProfile = { ...profile, provider: providerName, providerSpecialty };
+      const updatedProfile = { ...profile, provider: providerName, providerSpecialty, providerLocation };
       setProfile(updatedProfile);
       if (user) {
         try {
@@ -255,6 +255,7 @@ const Index = () => {
           <AddProviderScreen
             currentProvider={profile?.provider}
             currentSpecialty={profile?.providerSpecialty}
+            currentLocation={profile?.providerLocation}
             onSave={handleAddProviderSave}
             onBack={() => setStep('patient-dashboard')}
           />

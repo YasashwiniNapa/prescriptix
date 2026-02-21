@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-  User, Stethoscope, History, RotateCcw, Calendar,
+  User, Stethoscope, History, RotateCcw, Calendar, MapPin,
   AlertTriangle, CheckCircle2, Activity, ChevronRight,
   Pill, Heart, Phone, Mail, Shield, LogOut
 } from 'lucide-react';
@@ -197,6 +197,12 @@ const PatientDashboardScreen = ({
                         <p className="text-xs text-muted-foreground">{profile.providerSpecialty || 'General Practice'}</p>
                       </div>
                     </div>
+                    {profile.providerLocation && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground rounded-md bg-secondary/50 px-2.5 py-1.5">
+                        <MapPin className="h-3 w-3 shrink-0 text-primary" />
+                        <span>{profile.providerLocation}</span>
+                      </div>
+                    )}
                     <Button variant="ghost" size="sm" onClick={onAddProvider} className="gap-1.5 text-primary w-full">
                       <ChevronRight className="h-3 w-3" />
                       Change Provider
