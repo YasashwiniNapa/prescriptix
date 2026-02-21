@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  analyze-insights:
+    build:
+      context: ./analyze-insights
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8080"
+    environment:
+      - AZURE_AGENT_KEY=${AZURE_AGENT_KEY}
+      - AZURE_AGENT_ENDPOINT=${AZURE_AGENT_ENDPOINT}
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  nearby-hospitals:
+    build:
+      context: ./nearby-hospitals
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8080"
+    environment:
+      - AZURE_MAPS_KEY=${AZURE_MAPS_KEY}
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  transcribe:
+    build:
+      context: ./transcribe
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8080"
+    environment:
+      - AZURE_WHISPER_API_KEY=${AZURE_WHISPER_API_KEY}
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+networks:
+  backend-network:
+    driver: bridge
