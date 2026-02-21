@@ -9,6 +9,7 @@ import WelcomeScreen from '@/components/screens/WelcomeScreen';
 import CameraScreen from '@/components/screens/CameraScreen';
 import VisualScreeningScreen from '@/components/screens/VisualScreeningScreen';
 import ResultsScreen from '@/components/screens/ResultsScreen';
+import NearbyHospitalsScreen from '@/components/screens/NearbyHospitalsScreen';
 import VoiceInputScreen from '@/components/screens/VoiceInputScreen';
 import IntakeFormScreen from '@/components/screens/IntakeFormScreen';
 import ProcessingScreen from '@/components/screens/ProcessingScreen';
@@ -84,7 +85,7 @@ const Index = () => {
 
   const handleResultsContinue = (updatedSymptoms: SymptomItem[]) => {
     setSymptoms(updatedSymptoms);
-    setStep('voice-input');
+    setStep('nearby-hospitals');
   };
 
   const handleVoiceComplete = (transcript: string) => {
@@ -190,6 +191,12 @@ const Index = () => {
           <VisualScreeningScreen stream={stream} onComplete={handleScreeningComplete} />
         )}
         {step === 'results' && <ResultsScreen symptoms={symptoms} onContinue={handleResultsContinue} />}
+        {step === 'nearby-hospitals' && (
+          <NearbyHospitalsScreen
+            onContinue={() => setStep('voice-input')}
+            onSkip={() => setStep('voice-input')}
+          />
+        )}
         {step === 'voice-input' && (
           <VoiceInputScreen onComplete={handleVoiceComplete} onSkip={handleVoiceSkip} />
         )}
