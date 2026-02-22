@@ -1,3 +1,11 @@
+# Team Andy
+
+**Team Members:**
+- Disha Patel
+- Avani Jagdale  
+- Yash Napa
+- Nijaa Nishanth
+
 # health screening ai
 
 ai-powered health screening app using facial analysis, voice input, and real-time symptom detection.
