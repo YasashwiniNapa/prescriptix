@@ -122,7 +122,7 @@ const Index = () => {
     // Save to DB if user is logged in
     if (user) {
       try {
-        let profileId = await getProfileId();
+        const profileId = await getProfileId();
         if (profileId) {
           await saveSession(profileId, symptoms, ins, session.overallRisk);
           const updatedSessions = await loadSessions();
@@ -144,10 +144,21 @@ const Index = () => {
     setStep('advisory');
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-insights', {
-        body: { insights: ins },
+      // Call Python backend instead of Supabase function
+      const response = await fetch('http://localhost:8000/analyze-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ insights: ins }),
       });
-      if (error) throw error;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
+      const data = await response.json();
       setAdvisory(data as AgentAdvisory);
       // Use agent's severity to override risk for hospital routing
       if (data?.severityTier) {
