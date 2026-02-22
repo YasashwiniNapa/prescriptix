@@ -38,10 +38,25 @@ class RouterHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         
         if path in self.handlers:
-            # Create an instance of the appropriate handler
+            # Get the handler class and temporarily replace our methods
             handler_class = self.handlers[path]
-            handler = handler_class(self.request, self.client_address, self.server)
-            handler.do_POST()
+            
+            # Create a temporary instance with the SAME request context
+            temp_handler = handler_class.__new__(handler_class)
+            temp_handler.request = self.request
+            temp_handler.client_address = self.client_address
+            temp_handler.server = self.server
+            temp_handler.rfile = self.rfile
+            temp_handler.wfile = self.wfile
+            temp_handler.headers = self.headers
+            temp_handler.requestline = self.requestline
+            temp_handler.command = self.command
+            temp_handler.path = self.path
+            temp_handler.request_version = self.request_version
+            temp_handler.close_connection = self.close_connection
+            
+            # Call the handler's do_POST method
+            temp_handler.do_POST()
         else:
             self.send_response(404)
             self.send_header('Content-Type', 'application/json')
