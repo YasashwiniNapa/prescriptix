@@ -1,17 +1,33 @@
 import { motion } from 'framer-motion';
-import { Shield, Eye, Sparkles, Upload } from 'lucide-react';
+import { Shield, Eye, Sparkles, Upload, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
 
 interface WelcomeScreenProps {
   onStart: () => void;
   onVideoUpload?: () => void;
+  onBack?: () => void;
 }
 
 // marketing and entry screen for starting scans
-const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
+const WelcomeScreen = ({ onStart, onVideoUpload, onBack }: WelcomeScreenProps) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 gradient-hero">
+      {/* Back button */}
+      {onBack && (
+        <div className="fixed top-6 left-6 z-10">
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            size="sm"
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+      )}
+
       <div className="max-w-md mx-auto text-center">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -51,30 +67,12 @@ const WelcomeScreen = ({ onStart, onVideoUpload }: WelcomeScreenProps) => {
           )}
         </div>
 
-        {/* Features */}
-        <div className="mt-10 grid grid-cols-3 gap-4 text-center">
-          {[
-            { icon: Eye, label: 'AI-Powered' },
-            { icon: Shield, label: 'Private' },
-            { icon: Sparkles, label: 'Instant' },
-          ].map(({ icon: Icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                <Icon className="h-4 w-4 text-secondary-foreground" />
-              </div>
-              <span className="text-xs text-muted-foreground">{label}</span>
-            </div>
-          ))}
-        </div>
 
         {/* Privacy + Disclaimer */}
         <div className="mt-8 space-y-1">
           <p className="text-xs text-muted-foreground/70">
             <Shield className="mr-1 inline h-3 w-3" />
             Your data is processed locally and never stored without consent.
-          </p>
-          <p className="text-[10px] text-muted-foreground/50">
-            This tool provides asymmetry risk screening only — not a medical diagnosis.
           </p>
         </div>
       </div>

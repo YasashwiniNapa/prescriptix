@@ -231,7 +231,13 @@ const Index = () => {
   return (
     <AnimatePresence mode="wait">
       <motion.div key={step} variants={pageVariants} initial="initial" animate="animate" exit="exit">
-        {step === 'welcome' && <WelcomeScreen onStart={() => setStep('camera')} onVideoUpload={() => setStep('video-upload')} />}
+        {step === 'welcome' && (
+          <WelcomeScreen 
+            onStart={() => setStep('camera')} 
+            onVideoUpload={() => setStep('video-upload')}
+            onBack={profile ? () => setStep('patient-dashboard') : undefined}
+          />
+        )}
         {step === 'video-upload' && <VideoUploadScanScreen onBack={() => setStep('welcome')} />}
         {step === 'camera' && <CameraScreen onCameraReady={handleCameraReady} />}
         {step === 'screening' && stream && (
