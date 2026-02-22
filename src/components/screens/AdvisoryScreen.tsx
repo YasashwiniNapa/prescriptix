@@ -62,6 +62,19 @@ const AdvisoryScreen = ({ advisory, loading, error, onContinue }: AdvisoryScreen
     Low: 'bg-success',
   };
   const tierBarClass = tierBarClasses[advisory.severityTier];
+  let parsed = null;
+
+  try {
+    const cleaned = advisory.advisingReport
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    console.error("Failed to parse advisory report JSON:", e);
+  }
+
 
   return (
     <div className="flex min-h-screen flex-col items-center px-6 py-12 gradient-hero">
@@ -124,7 +137,7 @@ const AdvisoryScreen = ({ advisory, loading, error, onContinue }: AdvisoryScreen
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed text-foreground">
-                {advisory.advisingReport}
+                {parsed.advisingReport}
               </p>
             </CardContent>
           </Card>
