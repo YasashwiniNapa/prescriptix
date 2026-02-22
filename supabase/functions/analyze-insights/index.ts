@@ -20,11 +20,9 @@ serve(async (req) => {
       });
     }
 
-    const AZURE_AGENT_KEY = Deno.env.get("AZURE_AGENT_KEY");
-    const AZURE_AGENT_ENDPOINT = Deno.env.get("AZURE_AGENT_ENDPOINT");
-
-    if (!AZURE_AGENT_KEY || !AZURE_AGENT_ENDPOINT) {
-      return new Response(JSON.stringify({ error: "Azure Agent not configured" }), {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "AI gateway not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -32,30 +30,63 @@ serve(async (req) => {
 
     const insightsJson = JSON.stringify(insights);
 
-    console.log("Calling Azure endpoint:", AZURE_AGENT_ENDPOINT);
+    console.log("Calling Lovable AI Gateway for insights analysis");
 
-    // Try api-key header first (Azure OpenAI standard), fall back to Bearer
-    const response = await fetch(AZURE_AGENT_ENDPOINT, {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "api-key": AZURE_AGENT_KEY,
-        "Authorization": `Bearer ${AZURE_AGENT_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
         messages: [
           {
             role: "user",
             content: `Analyze this insights object and return a JSON response with: severityScore (0–1), severityTier (Low/Moderate/High), and a general advisingReport. Do not provide medical advice. Here is the insights object: ${insightsJson}`,
           },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_analysis",
+              description: "Return the structured analysis result",
+              parameters: {
+                type: "object",
+                properties: {
+                  severityScore: { type: "number", description: "Score from 0 to 1" },
+                  severityTier: { type: "string", enum: ["Low", "Moderate", "High"] },
+                  advisingReport: { type: "string", description: "General advisory report" },
+                },
+                required: ["severityScore", "severityTier", "advisingReport"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "return_analysis" } },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Azure Agent error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Azure Agent request failed" }), {
+      console.error("AI Gateway error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted, please add funds." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: "AI analysis request failed" }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -63,34 +94,38 @@ serve(async (req) => {
 
     const agentData = await response.json();
 
-    // The agent may return the result directly or nested in choices/messages
-    // Try to extract the structured response
-    let result = agentData;
-
-    // If the response is in OpenAI-style format
-    if (agentData.choices?.[0]?.message?.content) {
-      try {
-        result = JSON.parse(agentData.choices[0].message.content);
-      } catch {
-        result = { advisingReport: agentData.choices[0].message.content };
-      }
-    }
-
-    // If content is a string at top level
-    if (typeof agentData.content === "string") {
-      try {
-        result = JSON.parse(agentData.content);
-      } catch {
-        result = { advisingReport: agentData.content };
-      }
-    }
-
-    // Ensure we have the expected fields with defaults
-    const output = {
-      severityScore: result.severityScore ?? 0.5,
-      severityTier: result.severityTier ?? "Moderate",
-      advisingReport: result.advisingReport ?? "Analysis complete. Please consult a healthcare professional for personalized guidance.",
+    let output = {
+      severityScore: 0.5,
+      severityTier: "Moderate",
+      advisingReport: "Analysis complete. Please consult a healthcare professional for personalized guidance.",
     };
+
+    // Extract from tool call response
+    const toolCall = agentData.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      try {
+        const parsed = JSON.parse(toolCall.function.arguments);
+        output = {
+          severityScore: parsed.severityScore ?? output.severityScore,
+          severityTier: parsed.severityTier ?? output.severityTier,
+          advisingReport: parsed.advisingReport ?? output.advisingReport,
+        };
+      } catch {
+        console.error("Failed to parse tool call arguments");
+      }
+    } else if (agentData.choices?.[0]?.message?.content) {
+      // Fallback: try parsing content directly
+      try {
+        const parsed = JSON.parse(agentData.choices[0].message.content);
+        output = {
+          severityScore: parsed.severityScore ?? output.severityScore,
+          severityTier: parsed.severityTier ?? output.severityTier,
+          advisingReport: parsed.advisingReport ?? output.advisingReport,
+        };
+      } catch {
+        output.advisingReport = agentData.choices[0].message.content;
+      }
+    }
 
     return new Response(JSON.stringify(output), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
